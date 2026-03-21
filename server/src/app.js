@@ -11,6 +11,7 @@ const connectDB = require('./config/db');
 
 // Роуты
 const authRoutes = require('./routes/auth');
+const clientRoutes = require('./routes/clients');
 
 const app = express();
 
@@ -47,12 +48,9 @@ const authLimiter = rateLimit({
 // --- Роуты ---
 
 app.use('/api/v1/auth', authLimiter, authRoutes);
+app.use('/api/v1/clients', clientRoutes);
 
 // --- Заглушки (будут заменены) ---
-
-app.use('/api/v1/clients', (req, res) => {
-  res.json({ success: true, data: 'clients route — заглушка' });
-});
 
 app.use('/api/v1/contracts', (req, res) => {
   res.json({ success: true, data: 'contracts route — заглушка' });
