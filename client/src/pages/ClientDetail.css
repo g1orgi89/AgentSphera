@@ -62,20 +62,20 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 24px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .cd-avatar {
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  border-radius: 14px;
   background: var(--pri);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-heading);
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   flex-shrink: 0;
 }
 
@@ -94,17 +94,17 @@
 
 .cd-name {
   font-family: var(--font-heading);
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   color: var(--text);
   margin: 0;
 }
 
 .cd-status {
   display: inline-block;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 100px;
+  padding: 2px 8px;
+  border-radius: 4px;
   white-space: nowrap;
 }
 
@@ -127,19 +127,26 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  align-items: center;
 }
 
 .cd-contact {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
+  gap: 4px;
+  font-size: 0.8rem;
   color: var(--text-light);
   transition: color 0.2s;
 }
 
-a.cd-contact:hover {
+a.cd-contact {
   color: var(--sec);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+a.cd-contact:hover {
+  color: var(--pri);
 }
 
 .cd-contact-pref {
@@ -149,7 +156,7 @@ a.cd-contact:hover {
 
 .cd-header-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
@@ -157,10 +164,10 @@ a.cd-contact:hover {
 .cd-btn-delete {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 5px;
+  padding: 7px 12px;
   border-radius: var(--radius-sm);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 700;
   transition: all 0.2s;
 }
@@ -187,6 +194,26 @@ a.cd-contact:hover {
   color: var(--danger);
 }
 
+/* Заметка клиента (инлайн) */
+
+.cd-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.cd-note svg {
+  flex-shrink: 0;
+  color: var(--sec);
+}
+
 /* Документы */
 
 .cd-docs {
@@ -194,10 +221,10 @@ a.cd-contact:hover {
   align-items: center;
   justify-content: space-between;
   background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 14px 20px;
-  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 14px;
   gap: 12px;
 }
 
@@ -209,34 +236,33 @@ a.cd-contact:hover {
   color: var(--text-light);
 }
 
-.cd-docs-label {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text);
-  white-space: nowrap;
-}
-
 .cd-docs-link {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--sec);
-  word-break: break-all;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px dashed var(--sec);
 }
 
 .cd-docs-link:hover {
   color: var(--pri);
+  border-color: var(--pri);
 }
 
 .cd-docs-empty {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-light);
 }
 
 .cd-docs-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   background: none;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 6px 14px;
-  font-size: 0.8rem;
+  padding: 6px 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-light);
   white-space: nowrap;
@@ -253,52 +279,38 @@ a.cd-contact:hover {
 .cd-summary {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .cd-summary-card {
   background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
   text-align: center;
 }
 
 .cd-summary-value {
   display: block;
-  font-family: var(--font-heading);
-  font-size: 1.5rem;
+  font-size: 1.15rem;
+  font-weight: 900;
   color: var(--pri);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+}
+
+.cd-summary-accent {
+  color: #d9a800;
+}
+
+.cd-summary-sec {
+  color: var(--sec);
 }
 
 .cd-summary-label {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--text-light);
-}
-
-/* Заметка */
-
-.cd-note {
-  background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 16px 20px;
-  margin-bottom: 16px;
-}
-
-.cd-note h3 {
-  font-family: var(--font-heading);
-  font-size: 1rem;
-  color: var(--text);
-  margin-bottom: 8px;
-}
-
-.cd-note p {
-  font-size: 0.875rem;
-  color: var(--text-light);
-  white-space: pre-line;
+  font-weight: 600;
 }
 
 /* Секции (договоры, заметки, задачи) */
@@ -308,33 +320,153 @@ a.cd-contact:hover {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 20px;
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .cd-section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .cd-section-header h2 {
   font-family: var(--font-heading);
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   color: var(--pri);
   margin: 0;
 }
+
+/* Кнопка «+ Договор», «+ Задача» */
+
+.cd-section-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--pri);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.cd-section-add-btn:hover {
+  background: var(--sec);
+}
+
+.cd-section-add-btn-ghost {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-light);
+}
+
+.cd-section-add-btn-ghost:hover {
+  background: none;
+  border-color: var(--sec);
+  color: var(--sec);
+}
+
+/* Пустое состояние в секции */
 
 .cd-section-empty {
   text-align: center;
   padding: 24px;
   color: var(--text-light);
-  font-size: 0.875rem;
+  font-size: 0.85rem;
 }
 
 .cd-section-empty svg {
   display: block;
   margin: 0 auto 8px;
+}
+
+.cd-section-empty-btn {
+  background: var(--pri);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 18px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 12px;
+  transition: background 0.2s;
+}
+
+.cd-section-empty-btn:hover {
+  background: var(--sec);
+}
+
+/* Ромбовый разделитель */
+
+.cd-separator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.cd-separator-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.cd-separator-diamond {
+  width: 6px;
+  height: 6px;
+  background: var(--sec);
+  transform: rotate(45deg);
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+/* Поле ввода заметки */
+
+.cd-notes-input {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cd-notes-input input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  background: var(--bg);
+  transition: border-color 0.2s;
+}
+
+.cd-notes-input input:focus {
+  outline: none;
+  border-color: var(--sec);
+  box-shadow: 0 0 0 3px rgba(60, 168, 168, 0.12);
+}
+
+.cd-notes-add-btn {
+  background: var(--pri);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.cd-notes-add-btn:hover {
+  background: var(--sec);
+}
+
+.cd-notes-empty {
+  color: var(--text-light);
+  font-size: 0.8rem;
+  padding: 4px 0;
 }
 
 /* Адаптив */
@@ -361,5 +493,9 @@ a.cd-contact:hover {
   .cd-docs {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .cd-notes-input {
+    flex-direction: column;
   }
 }
