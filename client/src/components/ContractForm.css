@@ -1,0 +1,432 @@
+/* === Модальная форма договора === */
+
+.contract-form-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.contract-form-modal {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 32px;
+  width: 100%;
+  max-width: 640px;
+  margin: 40px auto;
+}
+
+.contract-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.contract-form-header h2 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--pri);
+}
+
+.contract-form-close {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  padding: 4px;
+  display: flex;
+}
+
+.contract-form-close:hover {
+  color: var(--text);
+}
+
+/* Шаги */
+
+.contract-form-steps {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+}
+
+.contract-form-step {
+  flex: 1;
+  text-align: center;
+  padding: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text-light);
+  transition: all 0.2s;
+}
+
+.contract-form-step.active {
+  background: var(--pri);
+  color: #fff;
+}
+
+.contract-form-step.done {
+  background: var(--sec);
+  color: #fff;
+}
+
+/* Форма */
+
+.contract-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contract-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contract-form-field label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.contract-form-field input,
+.contract-form-field select,
+.contract-form-field textarea {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.contract-form-field input:focus,
+.contract-form-field select:focus,
+.contract-form-field textarea:focus {
+  outline: none;
+  border-color: var(--sec);
+  box-shadow: 0 0 0 3px rgba(60, 168, 168, 0.15);
+}
+
+.contract-form-field textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.contract-form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.contract-form-row > .contract-form-field {
+  flex: 1;
+}
+
+.contract-form-error {
+  background: #fef2f2;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.875rem;
+}
+
+/* Кнопки */
+
+.contract-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.contract-form-back {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  color: var(--text);
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.contract-form-back:hover {
+  background: var(--bg);
+}
+
+.contract-form-next {
+  background: var(--pri);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.contract-form-next:hover {
+  background: var(--sec);
+}
+
+.contract-form-submit {
+  background: var(--acc);
+  color: var(--pri);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: opacity 0.2s;
+}
+
+.contract-form-submit:hover {
+  opacity: 0.85;
+}
+
+.contract-form-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.contract-form-cancel {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  color: var(--text);
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.contract-form-cancel:hover {
+  background: var(--bg);
+}
+
+/* Combo (поиск + свободный ввод) */
+
+.combo {
+  position: relative;
+}
+
+.combo-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.combo-input:focus {
+  outline: none;
+  border-color: var(--sec);
+  box-shadow: 0 0 0 3px rgba(60, 168, 168, 0.15);
+}
+
+.combo-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  max-height: 160px;
+  overflow-y: auto;
+  z-index: 100;
+  margin-top: 4px;
+}
+
+.combo-option {
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+
+.combo-option:hover {
+  background: var(--bg);
+}
+
+/* Взносы */
+
+.installments-section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+}
+
+.installments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.installments-header span {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.installments-add {
+  background: none;
+  border: 1px solid var(--sec);
+  border-radius: var(--radius-sm);
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  color: var(--sec);
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.installments-add:hover {
+  background: var(--sec);
+  color: #fff;
+}
+
+.installments-add:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.installment-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  margin-bottom: 8px;
+}
+
+.installment-item:last-child {
+  margin-bottom: 0;
+}
+
+.installment-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.installment-field label {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+.installment-field input {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+}
+
+.installment-field input:focus {
+  outline: none;
+  border-color: var(--sec);
+}
+
+.installment-remove {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  padding: 8px 4px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.installment-remove:hover {
+  color: var(--danger);
+}
+
+.installments-empty {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  text-align: center;
+  padding: 8px;
+}
+
+/* Выбор клиента + кнопка нового */
+
+.contract-client-section {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.contract-client-section > .contract-form-field {
+  flex: 1;
+}
+
+.contract-new-client-btn {
+  background: none;
+  border: 1px solid var(--acc);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  color: var(--pri);
+  font-weight: 700;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.contract-new-client-btn:hover {
+  background: var(--acc);
+}
+
+/* Сводка */
+
+.contract-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contract-summary-section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+}
+
+.contract-summary-section h3 {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  color: var(--pri);
+  margin-bottom: 12px;
+}
+
+.contract-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 0.875rem;
+}
+
+.contract-summary-row .label {
+  color: var(--text-light);
+}
+
+.contract-summary-row .value {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.contract-summary-commission {
+  display: inline-block;
+  background: #d1fae5;
+  color: #065f46;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+}
