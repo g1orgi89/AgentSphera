@@ -13,6 +13,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/clients');
 const { clientNotesRouter, notesRouter } = require('./routes/notes');
+const contractRoutes = require('./routes/contracts');
 
 const app = express();
 
@@ -52,12 +53,9 @@ app.use('/api/v1/auth', authLimiter, authRoutes);
 app.use('/api/v1/clients', clientRoutes);
 app.use('/api/v1/clients/:clientId/notes', clientNotesRouter);
 app.use('/api/v1/notes', notesRouter);
+app.use('/api/v1/contracts', contractRoutes);
 
 // --- Заглушки (будут заменены) ---
-
-app.use('/api/v1/contracts', (req, res) => {
-  res.json({ success: true, data: 'contracts route — заглушка' });
-});
 
 app.use('/api/v1/tasks', (req, res) => {
   res.json({ success: true, data: 'tasks route — заглушка' });
