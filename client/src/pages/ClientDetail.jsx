@@ -25,8 +25,10 @@ function ClientDetail() {
   const [linkValue, setLinkValue] = useState('');
   const [linkSaving, setLinkSaving] = useState(false);
 
-  // Заметки (пока локально — API появится в задаче 2.5)
+  // Заметки
+  const [notes, setNotes] = useState([]);
   const [noteText, setNoteText] = useState('');
+  const [noteAdding, setNoteAdding] = useState(false);
 
   const fetchClient = useCallback(async () => {
     setLoading(true);
@@ -49,9 +51,42 @@ function ClientDetail() {
     }
   }, [id]);
 
+  const fetchNotes = useCallback(async () => {
+    try {
+      const res = await api.get(`/clients/${id}/notes`);
+      setNotes(res.data.data);
+    } catch {
+      // Молча — заметки не критичны
+    }
+  }, [id]);
+
   useEffect(() => {
     fetchClient();
-  }, [fetchClient]);
+    fetchNotes();
+  }, [fetchClient, fetchNotes]);
+
+  const handleAddNote = async () => {
+    if (!noteText.trim()) return;
+    setNoteAdding(true);
+    try {
+      await api.post(`/clients/${id}/notes`, { text: noteText.trim() });
+      setNoteText('');
+      fetchNotes();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Ошибка добавления заметки');
+    } finally {
+      setNoteAdding(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    try {
+      await api.delete(`/notes/${noteId}`);
+      fetchNotes();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Ошибка удаления заметки');
+    }
+  };
 
   const handleEditSubmit = async (data) => {
     try {
@@ -99,6 +134,15 @@ function ClientDetail() {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
+    });
+  };
+
+  const formatDate = (date) => {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit'
     });
   };
 
@@ -306,25 +350,39 @@ function ClientDetail() {
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && noteText.trim()) {
-                alert('API заметок будет доступно в задаче 2.5');
-                setNoteText('');
+              if (e.key === 'Enter' && noteText.trim() && !noteAdding) {
+                handleAddNote();
               }
             }}
           />
           <button
             className="cd-notes-add-btn"
-            onClick={() => {
-              if (noteText.trim()) {
-                alert('API заметок будет доступно в задаче 2.5');
-                setNoteText('');
-              }
-            }}
+            onClick={handleAddNote}
+            disabled={noteAdding || !noteText.trim()}
           >
-            Добавить
+            {noteAdding ? '...' : 'Добавить'}
           </button>
         </div>
-        <p className="cd-notes-empty">Нет заметок</p>
+        {notes.length === 0 ? (
+          <p className="cd-notes-empty">Нет заметок</p>
+        ) : (
+          <div className="cd-notes-list">
+            {notes.map(note => (
+              <div key={note._id} className="cd-note-item">
+                <div className="cd-note-diamond" />
+                <div className="cd-note-content">
+                  <div className="cd-note-text">{note.text}</div>
+                  <div className="cd-note-date">{formatDate(note.date)}</div>
+                </div>
+                <button className="cd-note-delete" onClick={() => handleDeleteNote(note._id)}>
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 4h10M6 4V3h4v1M5 4v8.5a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Ромбовый разделитель */}
