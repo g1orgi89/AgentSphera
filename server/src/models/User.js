@@ -48,10 +48,17 @@ userSchema.methods.comparePassword = async function (plain) {
   return bcrypt.compare(plain, this.password);
 };
 
-// Генерация JWT
+// Генерация access token (15 мин)
 userSchema.methods.generateToken = function () {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '15m'
+  });
+};
+
+// Генерация refresh token (7 дней)
+userSchema.methods.generateRefreshToken = function () {
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+    expiresIn: '7d'
   });
 };
 
