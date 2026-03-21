@@ -1,0 +1,499 @@
+/* === Страница задач === */
+
+.tasks-page {
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.tasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.tasks-header h1 {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  color: var(--pri);
+}
+
+.tasks-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--pri);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.tasks-add-btn:hover {
+  background: var(--sec);
+}
+
+/* Тулбар: фильтры + сортировка */
+
+.tasks-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tasks-filters {
+  display: flex;
+  gap: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+}
+
+.tasks-filter-btn {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-light);
+  transition: all 0.2s;
+}
+
+.tasks-filter-btn:hover {
+  color: var(--text);
+}
+
+.tasks-filter-btn.active {
+  background: var(--pri);
+  color: #fff;
+}
+
+.tasks-sort {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.tasks-sort:focus {
+  outline: none;
+  border-color: var(--sec);
+}
+
+/* Ошибка */
+
+.tasks-error {
+  background: #fef2f2;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+}
+
+/* Загрузка */
+
+.tasks-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-light);
+  font-size: 1rem;
+}
+
+/* Счётчик */
+
+.tasks-count {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  margin-bottom: 12px;
+}
+
+/* Пустое состояние */
+
+.tasks-empty {
+  text-align: center;
+  padding: 80px 20px;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.tasks-empty h3 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--text);
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.tasks-empty p {
+  color: var(--text-light);
+  font-size: 0.875rem;
+  margin-bottom: 24px;
+}
+
+.tasks-empty-btn {
+  background: var(--acc);
+  color: var(--pri);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 24px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: opacity 0.2s;
+}
+
+.tasks-empty-btn:hover {
+  opacity: 0.85;
+}
+
+/* === Список задач === */
+
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  transition: box-shadow 0.2s;
+}
+
+.task-item:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.task-item.task-done {
+  opacity: 0.65;
+}
+
+/* Чекбокс */
+
+.task-checkbox {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  transition: all 0.2s;
+  color: #fff;
+  padding: 0;
+}
+
+.task-checkbox:hover {
+  border-color: var(--sec);
+}
+
+.task-checkbox.checked {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+/* Контент */
+
+.task-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.task-title {
+  font-size: 0.9375rem;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.task-title-done {
+  text-decoration: line-through;
+  color: var(--text-light);
+}
+
+/* Приоритет */
+
+.task-priority {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 100px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.priority-high {
+  background: #fef2f2;
+  color: var(--danger);
+}
+
+.priority-medium {
+  background: #fef9e7;
+  color: #92400e;
+}
+
+.priority-low {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+/* Мета */
+
+.task-meta {
+  display: flex;
+  gap: 16px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.task-date,
+.task-client {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.task-date-overdue {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.task-client {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.task-client:hover {
+  color: var(--sec);
+}
+
+/* Действия */
+
+.task-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.task-action-btn {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.task-action-btn:hover {
+  color: var(--sec);
+  background: rgba(60, 168, 168, 0.08);
+}
+
+.task-action-btn.delete:hover {
+  color: var(--danger);
+  background: rgba(231, 76, 60, 0.08);
+}
+
+/* Пагинация */
+
+.tasks-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.tasks-pagination button {
+  background: var(--card);
+  color: var(--pri);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.tasks-pagination button:hover:not(:disabled) {
+  background: var(--bg);
+}
+
+.tasks-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tasks-pagination span {
+  font-size: 0.875rem;
+  color: var(--text-light);
+}
+
+/* === Модальная форма задачи === */
+
+.task-form-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.task-form-modal {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.task-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.task-form-header h2 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--pri);
+}
+
+.task-form-close {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  padding: 4px;
+  display: flex;
+}
+
+.task-form-close:hover {
+  color: var(--text);
+}
+
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.task-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-form-field label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.task-form-field input,
+.task-form-field select {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.task-form-field input:focus,
+.task-form-field select:focus {
+  outline: none;
+  border-color: var(--sec);
+  box-shadow: 0 0 0 3px rgba(60, 168, 168, 0.15);
+}
+
+.task-form-error {
+  background: #fef2f2;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.875rem;
+}
+
+.task-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.task-form-cancel {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  color: var(--text);
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.task-form-cancel:hover {
+  background: var(--bg);
+}
+
+.task-form-submit {
+  background: var(--pri);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.task-form-submit:hover {
+  background: var(--sec);
+}
+
+.task-form-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
