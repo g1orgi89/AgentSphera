@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>АгентСфера — CRM для страховых агентов</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='4' y='4' width='16' height='16' rx='2' transform='rotate(45 12 12)' fill='%2301575C'/><rect x='12' y='12' width='14' height='14' rx='2' transform='rotate(45 19 19)' fill='%233CA8A8'/><rect x='14' y='14' width='4' height='4' rx='1' transform='rotate(45 16 16)' fill='%23FEC400'/></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Tenor+Sans&family=Lato:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#ECE3E4;--white:#fff;--card:#fff;--sidebar:#01575C;--input:#f7f3f3;--pri:#01575C;--sec:#3CA8A8;--acc:#FEC400;--acc-dk:#d9a800;--brd:#d3c9ca;--brd-lt:#e4dcdd;--tx:#1a2a2b;--tx2:#5a6b6c;--tx3:#8e9a9b;--tx-w:#fff;--tx-wd:rgba(255,255,255,.6);--sh:0 2px 12px rgba(1,87,92,.06);--sh-md:0 4px 20px rgba(1,87,92,.1);--sh-lg:0 8px 40px rgba(1,87,92,.12);--r:12px;--rs:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--tx);overflow-x:hidden}
+h1,h2,h3,h4{font-family:'Tenor Sans',serif;font-weight:400}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--brd);border-radius:3px}
+input,select,textarea,button{font-family:'Lato',sans-serif}
+input,select,textarea{background:var(--input);color:var(--tx);border:1px solid var(--brd);border-radius:var(--rs);padding:10px 14px;font-size:13px;width:100%;box-sizing:border-box;outline:none;transition:border .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--sec);box-shadow:0 0 0 3px rgba(60,168,168,.12)}
+input::placeholder,textarea::placeholder{color:var(--tx3)}
+select option{background:#fff}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.fi{animation:fadeIn .3s ease both}.su{animation:slideUp .25s ease both}
+</style>
+</head>
+<body>
+<div id="root"><div style="padding:40px;text-align:center;font-family:Lato,sans-serif;color:#01575C"><p style="font-size:16px;font-weight:600">Загрузка АгентСфера...</p><p style="font-size:12px;color:#8e9a9b;margin-top:8px">Если страница не загрузилась через 10 секунд, откройте консоль (F12)</p></div></div>
+<script>window.onerror=function(m,s,l){document.getElementById('root').innerHTML='<div style="padding:40px;color:#c0392b;font-family:monospace;font-size:13px"><h3>Ошибка</h3><p>'+m+'</p><p>Строка: '+l+'</p></div>';}</script>
+<script type="text/babel" data-presets="react">
+const{useState,useMemo,useEffect,useRef}=React;
+
+/* ═══ SVG Icons ═══ */
+const I={
+  home:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  users:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  clip:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>,
+  cal:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  doc:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+  out:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  plus:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  edit:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  trash:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+  check:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>,
+  search:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  car:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11"/><rect x="3" y="11" width="18" height="7" rx="2"/><circle cx="7.5" cy="15.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="15.5" r="1.5" fill="currentColor"/></svg>,
+  house:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>,
+  heart:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>,
+  filter:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
+  dl:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  upload:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+  phone:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>,
+  mail:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 7 12 13 2 7"/></svg>,
+  cake:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>,
+  chL:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>,
+  chR:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>,
+  note:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+  coin:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+  table:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>,
+  sortAsc:<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5z"/></svg>,
+  sortDesc:<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>,
+  sortNone:<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" opacity=".3"><path d="M7 10l5-5 5 5z"/><path d="M7 14l5 5 5-5z"/></svg>,
+  okCircle:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 12 15 16 9"/></svg>,
+  alertCircle:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+  minusCircle:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>,
+  trophy:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>,
+};
+
+/* VP Logo SVG */
+const VPLogo=({s=36,text=true,dark=false})=>(
+  <div style={{display:'flex',alignItems:'center',gap:8}}>
+    <svg width={s} height={s} viewBox="0 0 60 60" fill="none">
+      <rect x="8" y="8" width="26" height="26" rx="3" transform="rotate(45 21 21)" fill="#01575C"/>
+      <rect x="24" y="24" width="22" height="22" rx="3" transform="rotate(45 35 35)" fill="#3CA8A8"/>
+      <rect x="25" y="25" width="8" height="8" rx="1.5" transform="rotate(45 29 29)" fill="#FEC400"/>
+      <text x="15" y="26" fill="#fff" fontSize="14" fontFamily="'Tenor Sans',serif" fontWeight="400">V</text>
+      <text x="33" y="41" fill="#fff" fontSize="12" fontFamily="'Tenor Sans',serif" fontWeight="400">P</text>
+    </svg>
+    {text&&<span style={{fontFamily:"'Tenor Sans',serif",fontSize:s>30?16:13,color:dark?'#fff':'var(--pri)'}}>АгентСфера</span>}
+  </div>
+);
+
+/* ═══ DATA ═══ */
+const INIT_CL=[
+  {id:1,n:"Сириченко Иван Геннадьевич",ph:"+7 900 123-45-67",em:"sirichenko@mail.ru",pf:"Телефон",bday:"1985-03-15",nt:"Постоянный клиент"},
+  {id:2,n:"ООО Кимресурс",ph:"+7 495 222-33-44",em:"kim@resource.ru",pf:"Email",bday:"",nt:"Юрлицо"},
+  {id:3,n:"ООО Яр-Экспедитор",ph:"+7 910 555-33-22",em:"",pf:"Телефон",bday:"",nt:""},
+  {id:4,n:"Белотелов Дмитрий Сергеевич",ph:"+7 920 111-22-33",em:"",pf:"Telegram",bday:"1992-04-12",nt:""},
+  {id:5,n:"Майоров Кирилл Алексеевич",ph:"+7 905 777-88-99",em:"mayorov@gmail.com",pf:"Telegram",bday:"1978-03-28",nt:"VIP"},
+  {id:6,n:"Долинская Светлана Владимировна",ph:"+7 930 444-55-66",em:"",pf:"Звонок",bday:"1990-05-05",nt:""},
+  {id:7,n:"Полатов Сергей Дмитриевич",ph:"+7 915 222-33-44",em:"",pf:"Телефон",bday:"1988-04-30",nt:""},
+  {id:8,n:"Палий Андрей Сергеевич",ph:"+7 925 666-77-88",em:"paliy@yandex.ru",pf:"СМС",bday:"1995-03-22",nt:""}
+];
+const INIT_CT=[
+  {id:101,cid:1,co:"ВСК",num:"23280CS/444-D001",tp:"КАСКО",s:"2025-04-13",e:"2026-04-12",obj:"auto",od:{car:"ФОЛЬЦ ТАГУАН",pl:"К445ОР76"},pr:10804,comT:"%",comV:15,nt:"Доплата",inst:[{id:1001,amt:5402,due:"2025-04-13",paid:true},{id:1002,amt:5402,due:"2026-04-13",paid:false}]},
+  {id:102,cid:2,co:"ЗЕТТА",num:"ТТТ7060354462",tp:"ОСАГО",s:"2025-06-06",e:"2026-06-08",obj:"auto",od:{car:"Iveco",pl:"Н674КР76"},pr:6438,comT:"%",comV:10,nt:"",inst:[{id:1003,amt:6438,due:"2025-06-06",paid:true}]},
+  {id:103,cid:3,co:"Ренессанс",num:"ТТТ7060538876",tp:"ОСАГО",s:"2025-09-06",e:"2026-03-25",obj:"auto",od:{car:"Ford Transit",pl:"У612ОР76"},pr:11954,comT:"%",comV:12,nt:"",inst:[{id:1004,amt:5977,due:"2025-09-06",paid:true},{id:1040,amt:5977,due:"2026-03-20",paid:false}]},
+  {id:105,cid:5,co:"Ингосстрах",num:"AI832434103",tp:"КАСКО",s:"2025-09-27",e:"2026-09-26",obj:"auto",od:{car:"BMW X3",pl:"УО94НС78"},pr:88560,comT:"%",comV:18,nt:"",inst:[{id:1006,amt:22140,due:"2025-09-27",paid:true},{id:1007,amt:22140,due:"2025-12-27",paid:true},{id:1008,amt:22140,due:"2026-03-27",paid:false},{id:1009,amt:22140,due:"2026-06-27",paid:false}]},
+  {id:106,cid:5,co:"Альфа",num:"N-112200345",tp:"Страхование жизни",s:"2025-01-15",e:"2026-01-14",obj:"life",od:{insured:"Майоров К.А.",age:46,sum:5000000},pr:42000,comT:"fix",comV:8400,nt:"",inst:[{id:1010,amt:21000,due:"2025-01-15",paid:true},{id:1011,amt:21000,due:"2025-07-15",paid:true}]},
+  {id:107,cid:6,co:"Ренессанс",num:"ТТТ7060807627",tp:"ОСАГО",s:"2025-10-11",e:"2026-04-16",obj:"auto",od:{car:"МАЗ 2784",pl:"Е561УР76"},pr:17534,comT:"%",comV:10,nt:"",inst:[{id:1012,amt:8767,due:"2025-10-11",paid:true},{id:1041,amt:8767,due:"2026-04-11",paid:false}]},
+  {id:108,cid:7,co:"РЕСО",num:"ХХО0371384785",tp:"ОСАГО",s:"2025-08-12",e:"2026-05-16",obj:"auto",od:{car:"КАМАЗ 65116",pl:"Т882МА76"},pr:10284,comT:"%",comV:10,nt:"",inst:[{id:1013,amt:10284,due:"2025-08-12",paid:true}]},
+  {id:109,cid:8,co:"ВСК",num:"ХХО0371815723",tp:"ОСАГО",s:"2025-07-12",e:"2026-03-18",obj:"auto",od:{car:"Ford Transit",pl:"О792БР70"},pr:20968,comT:"%",comV:12,nt:"",inst:[{id:1014,amt:10484,due:"2025-07-12",paid:true},{id:1042,amt:10484,due:"2026-03-12",paid:false}]},
+  {id:110,cid:1,co:"Ингосстрах",num:"PROP-2025-001",tp:"Имущество",s:"2025-02-01",e:"2026-05-31",obj:"realty",od:{addr:"г. Ярославль, ул. Ленина 42/15",area:68,rtype:"Квартира"},pr:15200,comT:"%",comV:20,nt:"",inst:[{id:1015,amt:7600,due:"2025-02-01",paid:true},{id:1016,amt:7600,due:"2026-04-01",paid:false}]},
+  {id:111,cid:4,co:"СОГАЗ",num:"СГ-2025-7781",tp:"ОСАГО",s:"2025-11-01",e:"2026-04-30",obj:"auto",od:{car:"Lada Vesta",pl:"Р930АХ78"},pr:4200,comT:"%",comV:10,nt:"",inst:[{id:1017,amt:4200,due:"2025-11-01",paid:true}]}
+];
+const INIT_TK=[
+  {id:201,cid:1,t:"Поздравить с днём рождения",d:"2026-03-15",dn:false,p:"m"},
+  {id:202,cid:3,t:"Продление ОСАГО Яр-Экспедитор",d:"2026-03-18",dn:false,p:"h"},
+  {id:203,cid:8,t:"Окончание полиса — связаться с Палием",d:"2026-03-12",dn:false,p:"h"},
+  {id:204,cid:5,t:"3-й взнос КАСКО BMW X3",d:"2026-03-27",dn:false,p:"h"},
+  {id:205,cid:2,t:"Проверить документы Кимресурс",d:"2026-04-05",dn:false,p:"m"},
+  {id:206,cid:6,t:"Взнос ОСАГО МАЗ — Долинская",d:"2026-04-11",dn:false,p:"m"},
+  {id:207,cid:4,t:"Позвонить Белотелову по ОСАГО",d:"2026-04-15",dn:false,p:"l"},
+  {id:208,cid:1,t:"Взнос за имущество — Сириченко",d:"2026-04-01",dn:false,p:"h"}
+];
+const INIT_ACTS=[
+  {id:301,co:"ВСК",period:"Янв 2024",date:"2024-02-15",items:[{num:"23280CS/444-D001",name:"Сириченко И.Г.",exp:1620.6,act:1620.6,st:"ok"},{num:"ХХО0371815723",name:"Палий А.С.",exp:2516.16,act:2516.16,st:"ok"}]},
+  {id:302,co:"Ренессанс",period:"Янв 2024",date:"2024-02-20",items:[{num:"ТТТ7060538876",name:"Яр-Экспедитор",exp:1434.48,act:1434.48,st:"ok"},{num:"ТТТ7060807627",name:"Долинская С.В.",exp:1753.4,act:1700,st:"diff"}]}
+];
+
+const CH=["Телефон","Email","Telegram","WhatsApp","СМС","Звонок"];
+const MO=["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+const DW=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+const OT=[{v:"auto",l:"Автомобиль",ic:"car"},{v:"realty",l:"Недвижимость",ic:"house"},{v:"life",l:"Жизнь",ic:"heart"}];
+
+let _n=5e3;const gid=()=>++_n;
+const fD=d=>{if(!d)return'—';return new Date(d).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit'})};
+const fM=v=>(v||0).toLocaleString('ru-RU')+'₽';
+const today=new Date();today.setHours(0,0,0,0);
+const daysUntil=d=>{if(!d)return 999;const dt=new Date(d);dt.setHours(0,0,0,0);return Math.ceil((dt-today)/(864e5))};
+const ctStatus=ct=>{const de=daysUntil(ct.e);if(de<0)return{st:'expired',label:'Истёк',color:'#c0392b',bg:'#fde8e8'};if(de<=7)return{st:'soon7',label:'Истекает через '+de+' дн.',color:'#c0392b',bg:'#fde8e8'};if(de<=14)return{st:'soon14',label:'Истекает через '+de+' дн.',color:'var(--acc-dk)',bg:'#fff5d0'};if(de<=30)return{st:'soon30',label:'Истекает через '+de+' дн.',color:'var(--acc-dk)',bg:'#fff5d0'};return{st:'active',label:'Действующий',color:'var(--pri)',bg:'#e0f5ee'}};
+const instOverdue=ins=>!ins.paid&&daysUntil(ins.due)<0;
+const instSoon=ins=>!ins.paid&&daysUntil(ins.due)>=0&&daysUntil(ins.due)<=7;
+const pB=p=>p==='h'?'#fde8e8':p==='m'?'#fff5d0':'#e0f5ee';
+const pC=p=>p==='h'?'#c0392b':p==='m'?'#b8860b':'var(--pri)';
+const pN=p=>p==='h'?'Важно':p==='m'?'Средний':'Низкий';
+const comC=(t,pr,v)=>t==='%'?Math.round(pr*v/100):(v||0);
+const objIc=o=>o==='auto'?I.car:o==='realty'?I.house:I.heart;
+
+/* ═══ UI ═══ */
+const Tag=({text,bg,color,onClick,style:s})=><span onClick={onClick} style={{padding:'3px 10px',borderRadius:6,fontSize:11,fontWeight:600,background:bg||'rgba(60,168,168,.1)',color:color||'var(--sec)',whiteSpace:'nowrap',cursor:onClick?'pointer':'default',...s}}>{text}</span>;
+const Cd=({children,style,className,onClick})=><div onClick={onClick} className={className||'fi'} style={{background:'var(--card)',borderRadius:'var(--r)',padding:20,border:'1px solid var(--brd-lt)',boxShadow:'var(--sh)',transition:'all .2s',...style}}>{children}</div>;
+const Btn=({children,primary,danger,ghost,accent,small,onClick,style:s,disabled,icon})=><button disabled={disabled} onClick={onClick} style={{display:'inline-flex',alignItems:'center',gap:5,padding:small?'6px 12px':'9px 18px',border:ghost?'1px solid var(--brd)':primary||danger||accent?'none':'1px solid var(--brd)',borderRadius:'var(--rs)',background:danger?'#c0392b':accent?'var(--acc)':primary?'var(--pri)':ghost?'transparent':'var(--card)',color:primary||danger?'#fff':accent?'var(--pri)':ghost?'var(--tx2)':'var(--tx)',cursor:disabled?'not-allowed':'pointer',fontWeight:700,fontSize:small?11:12,opacity:disabled?0.4:1,transition:'all .15s',fontFamily:"'Lato',sans-serif",...s}}>{icon}{children}</button>;
+const Lb=({children})=><label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:'.06em'}}>{children}</label>;
+const Sep=()=><div style={{display:'flex',alignItems:'center',gap:10,margin:'16px 0'}}><div style={{flex:1,height:1,background:'var(--brd-lt)'}}/><div style={{width:6,height:6,background:'var(--sec)',transform:'rotate(45deg)',borderRadius:1}}/><div style={{flex:1,height:1,background:'var(--brd-lt)'}}/></div>;
+
+function Modal({children,onClose,title,wide}){return<div style={{position:'fixed',inset:0,background:'rgba(1,87,92,.2)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1e3,padding:16,backdropFilter:'blur(4px)'}} onClick={onClose}><div className="su" onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:16,padding:28,width:'100%',maxWidth:wide?680:480,maxHeight:'85vh',overflow:'auto',border:'1px solid var(--brd-lt)',boxShadow:'var(--sh-lg)'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}><h2 style={{fontSize:18}}>{title}</h2><button onClick={onClose} style={{background:'var(--bg)',border:'1px solid var(--brd)',borderRadius:8,width:32,height:32,cursor:'pointer',color:'var(--tx2)',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}}>×</button></div>{children}</div></div>}
+
+function Toast({msg,onDone}){useEffect(()=>{const t=setTimeout(onDone,2500);return()=>clearTimeout(t)},[]);return<div className="fi" style={{position:'fixed',bottom:24,right:24,background:'var(--pri)',color:'#fff',padding:'12px 20px',borderRadius:10,fontSize:13,fontWeight:700,zIndex:2e3,boxShadow:'0 8px 32px rgba(1,87,92,.25)',display:'flex',alignItems:'center',gap:8}}><div style={{width:6,height:6,background:'var(--acc)',transform:'rotate(45deg)',borderRadius:1}}/>{msg}</div>}
+
+function Confirm({msg,onYes,onNo}){return<Modal title="Подтверждение" onClose={onNo}><p style={{fontSize:14,color:'var(--tx2)',marginBottom:20,lineHeight:1.6}}>{msg}</p><div style={{display:'flex',justifyContent:'flex-end',gap:8}}><Btn ghost onClick={onNo}>Отмена</Btn><Btn danger onClick={onYes}>Удалить</Btn></div></Modal>}
+
+/* Combo input — free text + dropdown suggestions */
+function Combo({value,onChange,options,placeholder,style:s}){
+  const[open,sOpen]=useState(false);const ref=useRef();
+  const filtered=options.filter(o=>!value||o.toLowerCase().includes(value.toLowerCase()));
+  useEffect(()=>{const h=e=>{if(ref.current&&!ref.current.contains(e.target))sOpen(false)};document.addEventListener('mousedown',h);return()=>document.removeEventListener('mousedown',h)},[]);
+  return<div ref={ref} style={{position:'relative',...s}}>
+    <input value={value} onChange={e=>{onChange(e.target.value);sOpen(true)}} onFocus={()=>sOpen(true)} placeholder={placeholder}/>
+    {open&&<div style={{position:'absolute',top:'100%',left:0,right:0,zIndex:50,background:'#fff',border:'1px solid var(--brd)',borderRadius:'0 0 var(--rs) var(--rs)',boxShadow:'var(--sh-md)',maxHeight:210,overflowY:'auto'}}>
+      {filtered.map(o=><div key={o} onClick={()=>{onChange(o);sOpen(false)}}
+        onMouseEnter={e=>e.currentTarget.style.background='var(--bg)'}
+        onMouseLeave={e=>e.currentTarget.style.background=''}
+        style={{padding:'8px 14px',fontSize:13,cursor:'pointer',color:o===value?'var(--pri)':'var(--tx)',fontWeight:o===value?700:400}}>{o}</div>)}
+      <div style={{padding:'6px 14px',fontSize:11,color:'var(--tx3)',borderTop:'1px solid var(--brd-lt)',fontStyle:'italic'}}>
+        {value&&!options.some(o=>o.toLowerCase()===value.toLowerCase())
+          ? <span>Будет добавлено: <b style={{color:'var(--pri)'}}>{value}</b></span>
+          : 'Введите своё значение или выберите из списка'}
+      </div>
+    </div>}
+  </div>;
+}
+/* Client picker with search */
+function ClientPicker({value,onChange,clients,placeholder}){
+  const[open,sOpen]=useState(false);const[q,sQ]=useState('');const ref=useRef();
+  const sel=clients.find(c=>c.id===value);
+  const filtered=clients.filter(c=>!q||c.n.toLowerCase().includes(q.toLowerCase())||c.ph.includes(q));
+  useEffect(()=>{const h=e=>{if(ref.current&&!ref.current.contains(e.target))sOpen(false)};document.addEventListener('mousedown',h);return()=>document.removeEventListener('mousedown',h)},[]);
+  return<div ref={ref} style={{position:'relative',flex:1}}>
+    <input value={open?q:(sel?sel.n:'')} onChange={e=>{sQ(e.target.value);if(!open)sOpen(true)}} onFocus={()=>{sOpen(true);sQ('')}} placeholder={placeholder||'Поиск клиента...'}/>
+    {open&&<div style={{position:'absolute',top:'100%',left:0,right:0,zIndex:50,background:'#fff',border:'1px solid var(--brd)',borderRadius:'0 0 var(--rs) var(--rs)',boxShadow:'var(--sh-md)',maxHeight:220,overflowY:'auto'}}>
+      {value&&<div onClick={()=>{onChange('');sOpen(false)}} style={{padding:'6px 14px',fontSize:12,cursor:'pointer',color:'var(--tx3)',borderBottom:'1px solid var(--brd-lt)'}}>Без привязки</div>}
+      {filtered.length===0&&<div style={{padding:'12px 14px',fontSize:12,color:'var(--tx3)',textAlign:'center'}}>Не найдено</div>}
+      {filtered.map(c=><div key={c.id} onClick={()=>{onChange(c.id);sOpen(false);sQ('')}}
+        onMouseEnter={e=>e.currentTarget.style.background='var(--bg)'}
+        onMouseLeave={e=>e.currentTarget.style.background=''}
+        style={{padding:'8px 14px',fontSize:13,cursor:'pointer',color:c.id===value?'var(--pri)':'var(--tx)',fontWeight:c.id===value?700:400,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <span>{c.n}</span>
+        {c.ph&&<span style={{fontSize:10,color:'var(--tx3)'}}>{c.ph}</span>}
+      </div>)}
+    </div>}
+  </div>;
+}
+function ClForm({onSave,onClose,ini}){const[f,sF]=useState(ini||{n:'',ph:'',em:'',pf:'',bday:'',nt:'',link:'',status:'active'});const u=(k,v)=>sF({...f,[k]:v});
+return<Modal title={ini?'Редактировать клиента':'Новый клиент'} onClose={onClose}><div style={{display:'flex',flexDirection:'column',gap:12}}>
+  <div><Lb>ФИО / Название *</Lb><input value={f.n} onChange={e=>u('n',e.target.value)} placeholder="Иванов Иван Иванович"/></div>
+  <div><Lb>Статус</Lb><div style={{display:'flex',gap:6}}>
+    {[['active','Активный','var(--pri)','#e0f5ee'],['potential','Потенциальный','var(--acc-dk)','#fff5d0'],['inactive','Неактивный','var(--tx3)','var(--bg)']].map(([v,l,c,bg])=><button key={v} onClick={()=>u('status',v)} style={{flex:1,padding:8,border:f.status===v?'2px solid '+c:'1px solid var(--brd)',borderRadius:6,background:f.status===v?bg:'#fff',cursor:'pointer',fontSize:11,fontWeight:700,color:c,fontFamily:'inherit'}}>{l}</button>)}
+  </div></div>
+  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}><div><Lb>Телефон</Lb><input value={f.ph} onChange={e=>u('ph',e.target.value)}/></div><div><Lb>Email</Lb><input value={f.em} onChange={e=>u('em',e.target.value)}/></div></div>
+  <div><Lb>Дата рождения</Lb><input type="date" value={f.bday||''} onChange={e=>u('bday',e.target.value)}/></div>
+  <div><Lb>Связь</Lb><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{CH.map(m=><button key={m} onClick={()=>u('pf',m)} style={{padding:'6px 12px',border:f.pf===m?'2px solid var(--sec)':'1px solid var(--brd)',borderRadius:6,background:f.pf===m?'rgba(60,168,168,.1)':'#fff',cursor:'pointer',fontSize:11,color:f.pf===m?'var(--pri)':'var(--tx2)',fontFamily:'inherit',fontWeight:600}}>{m}</button>)}</div></div>
+  <div><Lb>Примечание</Lb><textarea value={f.nt} onChange={e=>u('nt',e.target.value)} rows={2} style={{resize:'vertical',fontFamily:'inherit'}}/></div>
+</div><div style={{display:'flex',justifyContent:'flex-end',gap:8,marginTop:20}}><Btn ghost onClick={onClose}>Отмена</Btn><Btn primary disabled={!f.n} onClick={()=>onSave({...f,id:ini?ini.id:gid()})}>Сохранить</Btn></div></Modal>}
+
+/* ═══ Contract Form ═══ */
+function CtForm({onSave,onClose,ini,cid,clients,onNewClient}){
+  const blank={cid:cid||'',co:'',num:'',tp:'',s:'',e:'',obj:'auto',od:{},pr:'',comT:'%',comV:'',nt:'',link:'',inst:[]};
+  const[f,sF]=useState(ini||blank);const[step,sSt]=useState(1);const u=(k,v)=>sF({...f,[k]:v});const uo=(k,v)=>sF({...f,od:{...f.od,[k]:v}});
+  const addI=()=>{if(f.inst.length>=4)return;sF({...f,inst:[...f.inst,{id:gid(),amt:'',due:'',paid:false}]})};
+  const uI=(i,k,v)=>{const n=[...f.inst];n[i]={...n[i],[k]:v};sF({...f,inst:n})};
+  const dI=i=>{const n=[...f.inst];n.splice(i,1);sF({...f,inst:n})};
+
+  return<Modal title={ini?'Редактировать договор':'Новый договор'} onClose={onClose} wide>
+    <div style={{display:'flex',gap:6,marginBottom:22}}>{[1,2,3].map(s=><div key={s} style={{flex:1,height:4,borderRadius:2,background:s<=step?'var(--sec)':'var(--brd-lt)',transition:'.3s'}}/>)}</div>
+    {step===1&&<div style={{display:'flex',flexDirection:'column',gap:12}}>
+      <p style={{fontSize:13,fontWeight:700,color:'var(--pri)'}}>Шаг 1 — Договор и взносы</p>
+      {!cid&&clients&&<div style={{marginBottom:4}}><Lb>Клиент *</Lb><div style={{display:'flex',gap:6}}><ClientPicker value={f.cid} onChange={v=>u('cid',v)} clients={clients} placeholder="Поиск клиента по имени или телефону..."/>{onNewClient&&<Btn small primary onClick={onNewClient} icon={I.plus}>Новый</Btn>}</div></div>}
+      <div><Lb>Страховая компания *</Lb><Combo value={f.co} onChange={v=>u('co',v)} options={["ВСК","ЗЕТТА","Ренессанс","Ингосстрах","РЕСО","Альфа","254","СОГАЗ","Росгосстрах","АльфаСтрахование"]} placeholder="Введите или выберите СК"/></div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}><div><Lb>Номер</Lb><input value={f.num} onChange={e=>u('num',e.target.value)}/></div><div><Lb>Тип *</Lb><Combo value={f.tp} onChange={v=>u('tp',v)} options={["КАСКО","ОСАГО","НС","ИПОТЕКА","ДМС","Страхование жизни","Имущество","Грузы","ВЗР"]} placeholder="Введите или выберите тип"/></div></div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}><div><Lb>Начало</Lb><input type="date" value={f.s} onChange={e=>u('s',e.target.value)}/></div><div><Lb>Окончание</Lb><input type="date" value={f.e} onChange={e=>u('e',e.target.value)}/></div></div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}><div><Lb>Премия</Lb><input type="number" value={f.pr} onChange={e=>u('pr',e.target.value)}/></div><div><Lb>Комиссия</Lb><select value={f.comT} onChange={e=>u('comT',e.target.value)}><option value="%">%</option><option value="fix">Фикс.</option></select></div><div><Lb>{f.comT==='%'?'%':'Сумма'}</Lb><input type="number" value={f.comV} onChange={e=>u('comV',e.target.value)}/></div></div>
+      <Sep/>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><Lb>Взносы (до 4)</Lb>{f.inst.length<4&&<Btn small ghost onClick={addI} icon={I.plus}>Взнос</Btn>}</div>
+      {f.inst.map((ins,i)=><div key={ins.id} style={{display:'grid',gridTemplateColumns:'1fr 1fr auto auto',gap:8,alignItems:'end',padding:10,background:'var(--bg)',borderRadius:8}}>
+        <div><label style={{fontSize:10,color:'var(--tx3)'}}>Сумма</label><input type="number" value={ins.amt} onChange={e=>uI(i,'amt',e.target.value)}/></div>
+        <div><label style={{fontSize:10,color:'var(--tx3)'}}>Дата</label><input type="date" value={ins.due} onChange={e=>uI(i,'due',e.target.value)}/></div>
+        <button onClick={()=>uI(i,'paid',!ins.paid)} style={{background:ins.paid?'var(--pri)':'var(--input)',border:'1px solid '+(ins.paid?'var(--pri)':'var(--brd)'),borderRadius:6,padding:'8px 10px',cursor:'pointer',color:ins.paid?'#fff':'var(--tx3)',fontSize:11,fontWeight:600,fontFamily:'inherit'}}>{ins.paid?'Оплачен':'Не опл.'}</button>
+        <button onClick={()=>dI(i)} style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',fontSize:16,padding:8}}>×</button>
+      </div>)}
+    </div>}
+    {step===2&&<div style={{display:'flex',flexDirection:'column',gap:12}}>
+      <p style={{fontSize:13,fontWeight:700,color:'var(--pri)'}}>Шаг 2 — Объект страхования</p>
+      <div style={{display:'flex',gap:8}}>{OT.map(o=><button key={o.v} onClick={()=>{u('obj',o.v);u('od',{})}} style={{flex:1,padding:'14px 10px',border:f.obj===o.v?'2px solid var(--sec)':'1px solid var(--brd)',borderRadius:10,background:f.obj===o.v?'rgba(60,168,168,.08)':'#fff',cursor:'pointer',fontSize:13,fontWeight:600,color:f.obj===o.v?'var(--pri)':'var(--tx2)',fontFamily:'inherit',textAlign:'center',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><span style={{color:f.obj===o.v?'var(--sec)':'var(--tx3)'}}>{I[o.ic]}</span>{o.l}</button>)}</div>
+      <Sep/>
+      {f.obj==='auto'&&<><div><Lb>Марка</Lb><input value={f.od.car||''} onChange={e=>uo('car',e.target.value)} placeholder="BMW X3"/></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}><div><Lb>Гос.номер</Lb><input value={f.od.pl||''} onChange={e=>uo('pl',e.target.value)}/></div><div><Lb>VIN</Lb><input value={f.od.vin||''} onChange={e=>uo('vin',e.target.value)}/></div></div></>}
+      {f.obj==='realty'&&<><div><Lb>Тип</Lb><input value={f.od.rtype||''} onChange={e=>uo('rtype',e.target.value)} placeholder="Квартира, Дом..."/></div><div><Lb>Адрес</Lb><input value={f.od.addr||''} onChange={e=>uo('addr',e.target.value)}/></div><div><Lb>Площадь</Lb><input type="number" value={f.od.area||''} onChange={e=>uo('area',e.target.value)}/></div></>}
+      {f.obj==='life'&&<><div><Lb>Застрахованное лицо</Lb><input value={f.od.insured||''} onChange={e=>uo('insured',e.target.value)}/></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}><div><Lb>Возраст</Lb><input type="number" value={f.od.age||''} onChange={e=>uo('age',e.target.value)}/></div><div><Lb>Страховая сумма</Lb><input type="number" value={f.od.sum||''} onChange={e=>uo('sum',e.target.value)}/></div></div></>}
+    </div>}
+    {step===3&&<div><p style={{fontSize:13,fontWeight:700,color:'var(--pri)',marginBottom:12}}>Шаг 3 — Сводка</p>
+      <div><Lb>Примечание</Lb><textarea value={f.nt} onChange={e=>u('nt',e.target.value)} rows={2} style={{resize:'vertical',fontFamily:'inherit'}}/></div>
+      <div style={{marginTop:8}}><Lb>Ссылка на документы</Lb><input value={f.link||''} onChange={e=>u('link',e.target.value)} placeholder="https://drive.google.com/..."/></div>
+      <div><Lb>Ссылка на документы (Google Drive, Яндекс.Диск и т.д.)</Lb><input value={f.link||''} onChange={e=>u('link',e.target.value)} placeholder="https://drive.google.com/..."/></div>
+      <Cd style={{background:'var(--bg)',padding:14,marginTop:14,boxShadow:'none'}}><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,fontSize:13}}>
+        <span style={{color:'var(--tx3)'}}>СК:</span><span style={{fontWeight:700}}>{f.co||'—'}</span>
+        <span style={{color:'var(--tx3)'}}>Тип:</span><span style={{fontWeight:700}}>{f.tp||'—'}</span>
+        <span style={{color:'var(--tx3)'}}>Премия:</span><span style={{fontWeight:700}}>{fM(Number(f.pr))}</span>
+        <span style={{color:'var(--tx3)'}}>КВ:</span><span style={{fontWeight:700,color:'var(--pri)'}}>{f.comT==='%'?`${f.comV||0}% = ${fM(comC('%',Number(f.pr),Number(f.comV)))}`:`${fM(Number(f.comV))}`}</span>
+        <span style={{color:'var(--tx3)'}}>Взносов:</span><span style={{fontWeight:700}}>{f.inst.length}</span>
+      </div></Cd>
+    </div>}
+    <div style={{display:'flex',justifyContent:'space-between',marginTop:20}}>
+      {step>1?<Btn ghost onClick={()=>sSt(step-1)}>Назад</Btn>:<div/>}
+      {step<3?<Btn primary onClick={()=>sSt(step+1)}>Далее</Btn>:<Btn primary disabled={!f.co||!f.tp} onClick={()=>{onSave({...f,id:ini?ini.id:gid(),pr:Number(f.pr)||0,comV:Number(f.comV)||0,cid:f.cid||cid,inst:f.inst.map(i=>({...i,amt:Number(i.amt)||0}))})}}>Сохранить</Btn>}
+    </div>
+  </Modal>;
+}
+
+/* ═══ Task Form ═══ */
+function TkForm({onSave,onClose,cls,ini}){const[f,sF]=useState(ini||{t:'',cid:'',d:'',p:'m'});const u=(k,v)=>sF({...f,[k]:v});
+return<Modal title={ini?'Редактировать':'Новая задача'} onClose={onClose}><div style={{display:'flex',flexDirection:'column',gap:12}}>
+  <div><Lb>Описание *</Lb><input value={f.t} onChange={e=>u('t',e.target.value)}/></div>
+  <div><Lb>Клиент</Lb><ClientPicker value={f.cid} onChange={v=>u('cid',v)} clients={cls} placeholder="Поиск клиента..."/></div>
+  <div><Lb>Дата</Lb><input type="date" value={f.d} onChange={e=>u('d',e.target.value)}/></div>
+  <div><Lb>Приоритет</Lb><div style={{display:'flex',gap:6}}>{[['h','Важно'],['m','Средний'],['l','Низкий']].map(([v,l])=><button key={v} onClick={()=>u('p',v)} style={{flex:1,padding:10,border:f.p===v?'2px solid '+pC(v):'1px solid var(--brd)',borderRadius:8,background:f.p===v?pB(v):'#fff',cursor:'pointer',fontSize:12,fontWeight:700,color:pC(v),fontFamily:'inherit'}}>{l}</button>)}</div></div>
+</div><div style={{display:'flex',justifyContent:'flex-end',gap:8,marginTop:20}}><Btn ghost onClick={onClose}>Отмена</Btn><Btn primary disabled={!f.t} onClick={()=>onSave({...f,id:ini?ini.id:gid(),dn:ini?ini.dn:false,cid:Number(f.cid)||0})}>Сохранить</Btn></div></Modal>}
+
+/* ═══ Calendar ═══ */
+function Cal({tasks,cls,cts}){const td=new Date();const[yr,sY]=useState(td.getFullYear());const[mo,sM]=useState(td.getMonth());const[sel,sS]=useState(null);
+  const prev=()=>{if(mo===0){sM(11);sY(yr-1)}else sM(mo-1);sS(null)};const next=()=>{if(mo===11){sM(0);sY(yr+1)}else sM(mo+1);sS(null)};
+  const fd=new Date(yr,mo,1);const ld=new Date(yr,mo+1,0);const sd=(fd.getDay()+6)%7;const dim=ld.getDate();
+  const evs=useMemo(()=>{const ev={};const add=(d,it)=>{if(!ev[d])ev[d]=[];ev[d].push(it)};
+    tasks.forEach(t=>{if(!t.d)return;const d=new Date(t.d);if(d.getFullYear()===yr&&d.getMonth()===mo)add(d.getDate(),{tp:'task',task:t,cl:cls.find(c=>c.id===t.cid)})});
+    cts.forEach(ct=>{if(!ct.e)return;const d=new Date(ct.e);if(d.getFullYear()===yr&&d.getMonth()===mo)add(d.getDate(),{tp:'exp',ct,cl:cls.find(c=>c.id===ct.cid)})});
+    cts.forEach(ct=>{ct.inst.forEach(ins=>{if(!ins.due||ins.paid)return;const d=new Date(ins.due);if(d.getFullYear()===yr&&d.getMonth()===mo)add(d.getDate(),{tp:'inst',ct,ins,cl:cls.find(c=>c.id===ct.cid)})})});
+    cls.forEach(cl=>{if(!cl.bday)return;const d=new Date(cl.bday);if(d.getMonth()===mo)add(d.getDate(),{tp:'bday',cl})});
+    return ev},[tasks,cls,cts,yr,mo]);
+  const cells=[];for(let i=0;i<sd;i++)cells.push(null);for(let d=1;d<=dim;d++)cells.push(d);
+  const isT=d=>d===td.getDate()&&mo===td.getMonth()&&yr===td.getFullYear();
+  const de=sel?(evs[sel]||[]):[];
+  const ec={task:'var(--sec)',exp:'#c0392b',inst:'var(--acc-dk)',bday:'var(--pri)'};
+  const el={task:'Задача',exp:'Окончание',inst:'Взнос',bday:'День рождения'};
+
+  return<div>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}><h1 style={{fontSize:22}}>Календарь</h1><Btn small ghost onClick={()=>{sY(td.getFullYear());sM(td.getMonth());sS(td.getDate())}}>Сегодня</Btn></div>
+    <Cd style={{marginBottom:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
+        <button onClick={prev} style={{background:'var(--bg)',border:'1px solid var(--brd)',borderRadius:8,padding:'8px 12px',cursor:'pointer',color:'var(--tx)',display:'flex'}}>{I.chL}</button>
+        <h2 style={{fontSize:17}}>{MO[mo]} {yr}</h2>
+        <button onClick={next} style={{background:'var(--bg)',border:'1px solid var(--brd)',borderRadius:8,padding:'8px 12px',cursor:'pointer',color:'var(--tx)',display:'flex'}}>{I.chR}</button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3}}>
+        {DW.map(d=><div key={d} style={{textAlign:'center',fontSize:10,fontWeight:700,color:'var(--tx3)',padding:'8px 0',textTransform:'uppercase',letterSpacing:'.1em'}}>{d}</div>)}
+        {cells.map((d,i)=>{if(!d)return<div key={'e'+i}/>;const has=evs[d];const s=sel===d;
+          return<div key={d} onClick={()=>sS(s?null:d)} style={{textAlign:'center',padding:'10px 4px',borderRadius:10,cursor:'pointer',background:s?'var(--pri)':isT(d)?'rgba(60,168,168,.1)':'transparent',color:s?'#fff':isT(d)?'var(--pri)':'var(--tx)',fontWeight:isT(d)||s?700:400,fontSize:13,transition:'.15s'}}>
+            {d}{has&&<div style={{display:'flex',gap:2,justifyContent:'center',marginTop:3}}>{[...new Set(has.map(e=>e.tp))].map(t=><div key={t} style={{width:5,height:5,borderRadius:1,background:s?'rgba(255,255,255,.7)':ec[t],transform:'rotate(45deg)'}}/>)}</div>}
+          </div>})}
+      </div>
+      {(()=>{const allEv=Object.values(evs).flat();const cnt={task:0,exp:0,inst:0,bday:0};allEv.forEach(e=>cnt[e.tp]=(cnt[e.tp]||0)+1);const total=allEv.length;
+        return total>0?<div style={{padding:'12px 0 4px',fontSize:12,color:'var(--tx2)',fontWeight:600}}>
+          В этом месяце: {Object.entries(cnt).filter(([k,v])=>v>0).map(([k,v])=><span key={k} style={{marginLeft:8,color:ec[k]}}>{el[k]}: {v}</span>)}
+        </div>:<div style={{padding:'16px 0 4px',textAlign:'center',fontSize:13,color:'var(--tx3)'}}>В этом месяце нет запланированных событий</div>;
+      })()}
+      <div style={{display:'flex',gap:14,marginTop:10,paddingTop:14,borderTop:'1px solid var(--brd-lt)',flexWrap:'wrap'}}>
+        {Object.entries(el).map(([k,l])=><div key={k} style={{display:'flex',alignItems:'center',gap:5,fontSize:10,color:'var(--tx3)'}}><div style={{width:6,height:6,borderRadius:1,background:ec[k],transform:'rotate(45deg)'}}/>{l}</div>)}
+      </div>
+    </Cd>
+    {sel&&<Cd className="su"><h3 style={{fontSize:15,marginBottom:14}}>{sel} {MO[mo]}</h3>
+      {de.length===0?<p style={{color:'var(--tx3)',textAlign:'center',padding:16}}>Нет событий</p>:
+        de.map((ev,i)=><div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',marginBottom:6,borderRadius:8,background:'var(--bg)',border:'1px solid var(--brd-lt)'}}>
+          <div style={{width:6,height:24,borderRadius:2,background:ec[ev.tp],flexShrink:0}}/>
+          <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700}}>{ev.tp==='exp'?`Окончание: ${ev.ct.tp} ${ev.ct.num}`:ev.tp==='inst'?`Взнос ${fM(ev.ins.amt)} — ${ev.ct.tp}`:ev.tp==='bday'?`День рождения: ${ev.cl.n}`:ev.task.t}</div><div style={{fontSize:11,color:'var(--tx3)'}}>{ev.cl?ev.cl.n:''}</div></div>
+          <Tag text={el[ev.tp]} bg={ec[ev.tp]+'18'} color={ec[ev.tp]}/>
+        </div>)}
+    </Cd>}
+  </div>;
+}
+
+/* ═══ Acts ═══ */
+function Acts({acts,setActs,cts,cls,show}){const[up,sUp]=useState(false);const[parsed,sP]=useState(null);const[selA,sA]=useState(null);const fr=useRef();
+  const[manual,sManual]=useState(false);const[mCo,sMCo]=useState('');const[mPeriod,sMPeriod]=useState('');const[mItems,sMItems]=useState([{num:'',name:'',act:''}]);
+  const hFile=e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{try{const wb=XLSX.read(ev.target.result,{type:'binary'});const ws=wb.Sheets[wb.SheetNames[0]];const data=XLSX.utils.sheet_to_json(ws,{defval:''});if(data.length){const keys=Object.keys(data[0]);const fc=h=>keys.find(k=>h.some(x=>k.toLowerCase().includes(x)))||'';const nc=fc(['номер','договор','полис','contract','number']);const nmc=fc(['фио','имя','клиент','name','страховат']);const sc=fc(['комисс','вознаг','сумма','commission','amount','кв']);const items=data.map(row=>{const num=String(row[nc]||'').trim();const name=String(row[nmc]||'').trim();const actual=parseFloat(String(row[sc]||'0').replace(/[^\d.,]/g,'').replace(',','.'))||0;const match=cts.find(c=>c.num&&num&&c.num.toLowerCase()===num.toLowerCase());const exp=match?comC(match.comT,match.pr,match.comV):0;return{num,name,act:actual,exp,st:!match?'unk':Math.abs(exp-actual)<1?'ok':'diff'}}).filter(i=>i.num||i.name);sP({fn:file.name,items})}}catch(er){show('Ошибка чтения')}};reader.readAsBinaryString(file);e.target.value=''};
+  const save=()=>{if(!parsed)return;setActs([{id:gid(),co:'Файл',period:parsed.fn,date:new Date().toISOString().slice(0,10),items:parsed.items},...acts]);sP(null);sUp(false);show('Акт сохранён')};
+  const stB={ok:'#e0f5ee',diff:'#fde8e8',unk:'#fff5d0'};const stC={ok:'var(--pri)',diff:'#c0392b',unk:'var(--acc-dk)'};const stL={ok:'Совпадает',diff:'Расхождение',unk:'Не найден'};
+
+  const saveManual=()=>{
+    const items=mItems.filter(i=>i.num||i.name).map(i=>{const act=parseFloat(String(i.act).replace(',','.'))||0;const match=cts.find(c=>c.num&&i.num&&c.num.toLowerCase()===i.num.toLowerCase());const exp=match?comC(match.comT,match.pr,match.comV):0;return{num:i.num,name:i.name,act,exp,st:!match?'unk':Math.abs(exp-act)<1?'ok':'diff'}});
+    if(!items.length){show('Добавьте хотя бы одну строку');return}
+    setActs([{id:gid(),co:mCo||'—',period:mPeriod||'—',date:new Date().toISOString().slice(0,10),items},...acts]);
+    sManual(false);sMCo('');sMPeriod('');sMItems([{num:'',name:'',act:''}]);show('Акт сохранён')};
+  const addMRow=()=>sMItems([...mItems,{num:'',name:'',act:''}]);
+  const updMRow=(i,k,v)=>{const n=[...mItems];n[i]={...n[i],[k]:v};sMItems(n)};
+
+  return<div>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}><h1 style={{fontSize:22}}>Акты и сверка</h1><div style={{display:'flex',gap:8}}><input ref={fr} type="file" accept=".xlsx,.xls,.csv" onChange={hFile} style={{display:'none'}}/><Btn ghost onClick={()=>{sManual(true);sUp(false)}} icon={I.plus}>Ручной ввод</Btn><Btn primary onClick={()=>{sUp(true);sP(null);sManual(false)}} icon={I.upload}>Загрузить Excel</Btn></div></div>
+
+    {/* Manual entry form */}
+    {manual&&<Cd className="su" style={{marginBottom:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}><h3 style={{fontSize:15}}>Ручной ввод акта</h3><button onClick={()=>sManual(false)} style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',fontSize:16}}>×</button></div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:14}}>
+        <div><Lb>Страховая компания</Lb><input value={mCo} onChange={e=>sMCo(e.target.value)} placeholder="ВСК, Ренессанс..."/></div>
+        <div><Lb>Период</Lb><input value={mPeriod} onChange={e=>sMPeriod(e.target.value)} placeholder="Янв 2025, Q1 2025..."/></div>
+      </div>
+      <Lb>Строки акта</Lb>
+      {mItems.map((it,i)=><div key={i} style={{display:'grid',gridTemplateColumns:'1fr 1fr 120px 32px',gap:8,marginBottom:6,alignItems:'end'}}>
+        <div><label style={{fontSize:10,color:'var(--tx3)'}}>Номер договора</label><input value={it.num} onChange={e=>updMRow(i,'num',e.target.value)}/></div>
+        <div><label style={{fontSize:10,color:'var(--tx3)'}}>Клиент</label><input value={it.name} onChange={e=>updMRow(i,'name',e.target.value)}/></div>
+        <div><label style={{fontSize:10,color:'var(--tx3)'}}>Сумма КВ</label><input value={it.act} onChange={e=>updMRow(i,'act',e.target.value)} type="number"/></div>
+        {mItems.length>1&&<button onClick={()=>{const n=[...mItems];n.splice(i,1);sMItems(n)}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',fontSize:16,padding:8}}>×</button>}
+      </div>)}
+      <div style={{display:'flex',justifyContent:'space-between',marginTop:12}}>
+        <Btn small ghost onClick={addMRow} icon={I.plus}>Строка</Btn>
+        <Btn primary onClick={saveManual}>Сохранить акт</Btn>
+      </div>
+    </Cd>}
+    {up&&<Cd className="su" style={{marginBottom:16,border:'2px dashed var(--sec)'}}>
+      {!parsed?<div style={{textAlign:'center',padding:30}}><div style={{color:'var(--sec)',marginBottom:12}}>{I.doc}</div><p style={{color:'var(--tx2)',marginBottom:14,fontSize:14,fontFamily:"'Tenor Sans',serif"}}>Загрузите Excel акт от страховой компании</p><p style={{color:'var(--tx3)',marginBottom:16,fontSize:12}}>Система найдёт столбцы с договорами и суммами комиссий</p><div style={{display:'flex',gap:8,justifyContent:'center'}}><Btn primary onClick={()=>fr.current.click()}>Выбрать файл</Btn><Btn ghost onClick={()=>sUp(false)}>Отмена</Btn></div></div>:
+      <div><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}><div><Tag text={parsed.fn} bg="rgba(60,168,168,.1)" color="var(--pri)"/><span style={{marginLeft:8,fontSize:12,color:'var(--tx2)'}}>Записей: {parsed.items.length}</span></div><div style={{display:'flex',gap:6}}><Btn small primary onClick={save}>Сохранить</Btn><Btn small ghost onClick={()=>{sP(null);sUp(false)}}>Отмена</Btn></div></div>
+        <div style={{overflowX:'auto'}}><table style={{width:'100%',borderCollapse:'collapse',fontSize:12,textAlign:'left'}}><thead><tr style={{borderBottom:'2px solid var(--brd)'}}>{['Договор','Клиент','Факт','Ожидание','Статус'].map(h=><th key={h} style={{padding:'8px 10px',color:'var(--tx2)',fontWeight:700}}>{h}</th>)}</tr></thead>
+          <tbody>{parsed.items.map((it,i)=><tr key={i} style={{borderBottom:'1px solid var(--brd-lt)'}}><td style={{padding:'8px 10px',fontFamily:'monospace',fontSize:11}}>{it.num||'—'}</td><td style={{padding:'8px 10px'}}>{it.name||'—'}</td><td style={{padding:'8px 10px',fontFamily:'monospace'}}>{fM(it.act)}</td><td style={{padding:'8px 10px',fontFamily:'monospace'}}>{it.exp?fM(it.exp):'—'}</td><td style={{padding:'8px 10px'}}><Tag text={stL[it.st]} bg={stB[it.st]} color={stC[it.st]}/></td></tr>)}</tbody></table></div>
+        <div style={{display:'flex',gap:16,marginTop:12,paddingTop:12,borderTop:'1px solid var(--brd-lt)',fontSize:12}}>{['ok','diff','unk'].map(s=><span key={s} style={{color:stC[s],fontWeight:700}}>{stL[s]}: {parsed.items.filter(i=>i.st===s).length}</span>)}</div>
+      </div>}
+    </Cd>}
+    {acts.map(a=><Cd key={a.id} style={{marginBottom:10,padding:14,cursor:'pointer',border:selA===a.id?'2px solid var(--sec)':'1px solid var(--brd-lt)'}} onClick={()=>sA(selA===a.id?null:a.id)}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><div style={{display:'flex',alignItems:'center',gap:10}}><div style={{width:8,height:8,background:'var(--sec)',transform:'rotate(45deg)',borderRadius:1,flexShrink:0}}/><div><div style={{fontSize:14,fontWeight:700}}>{a.co} — {a.period}</div><div style={{fontSize:11,color:'var(--tx3)'}}>от {fD(a.date)}, {a.items.length} записей</div></div></div>
+        <div style={{display:'flex',gap:6}}><Tag text={`${a.items.filter(i=>i.st==='ok').length} ок`} bg="#e0f5ee" color="var(--pri)"/>{a.items.some(i=>i.st==='diff')&&<Tag text={`${a.items.filter(i=>i.st==='diff').length} разн.`} bg="#fde8e8" color="#c0392b"/>}</div></div>
+      {selA===a.id&&<div style={{marginTop:14,paddingTop:14,borderTop:'1px solid var(--brd-lt)'}}><table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}><tbody>{a.items.map((it,i)=><tr key={i} style={{borderBottom:'1px solid var(--brd-lt)'}}><td style={{padding:'6px 8px',fontFamily:'monospace',fontSize:11}}>{it.num}</td><td style={{padding:'6px 8px'}}>{it.name}</td><td style={{padding:'6px 8px',fontFamily:'monospace'}}>{fM(it.exp)}</td><td style={{padding:'6px 8px',fontFamily:'monospace'}}>{fM(it.act)}</td><td style={{padding:'6px 8px'}}><Tag text={stL[it.st]} bg={stB[it.st]} color={stC[it.st]}/></td></tr>)}</tbody></table></div>}
+    </Cd>)}
+    {!acts.length&&!up&&<Cd style={{textAlign:'center',padding:40}}><div style={{color:'var(--sec)',marginBottom:8}}>{I.doc}</div><p style={{color:'var(--tx2)',fontFamily:"'Tenor Sans',serif"}}>Нет актов</p><p style={{color:'var(--tx3)',fontSize:12}}>Загрузите Excel от СК для автосверки</p></Cd>}
+  </div>;
+}
+
+/* ═══ Export ═══ */
+function expCSV(cls,cts){const h="ФИО;Телефон;Email;СК;Номер;Тип;Начало;Конец;Объект;Премия;КВ%;КВ₽;Примечание\n";const r=cts.map(ct=>{const c=cls.find(x=>x.id===ct.cid);return`${c?c.n:''};${c?c.ph:''};${c?c.em:''};${ct.co};${ct.num};${ct.tp};${fD(ct.s)};${fD(ct.e)};${ct.obj};${ct.pr};${ct.comT==='%'?ct.comV:''};${comC(ct.comT,ct.pr,ct.comV)};${ct.nt}`}).join("\n");const blob=new Blob(["\uFEFF"+h+r],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download="agentsfera_export.csv";a.click();URL.revokeObjectURL(url)}
+
+/* ═══ CRM ═══ */
+function Crm({onOut,userName}){
+  /* localStorage helpers */
+  const DATA_VER='v9';
+  const ls=(k,d)=>{try{if(localStorage.getItem('as_ver')!==DATA_VER)return d;const v=localStorage.getItem('as_'+k);return v?JSON.parse(v):d}catch(e){return d}};
+  const sv=(k,v)=>{try{localStorage.setItem('as_ver',DATA_VER);localStorage.setItem('as_'+k,JSON.stringify(v))}catch(e){}};
+
+  const[pg,sPg]=useState('dash');const[cls,sCl]=useState(()=>ls('cls',INIT_CL));const[cts,sCt]=useState(()=>ls('cts',INIT_CT));const[tks,sTk]=useState(()=>ls('tks',INIT_TK));const[acts,sActs]=useState(()=>ls('acts',INIT_ACTS));
+  const[q,sQ]=useState('');const[ft,sFt]=useState('');const[fc,sFc]=useState('');const[fo,sFo]=useState('');
+  const[sel,sSel]=useState(null);const[sf,sSf]=useState(false);const[sb,sSb]=useState(true);const[toast,sToast]=useState(null);
+  const[clSort,sClSort]=useState('name');const[gSearch,sGSearch]=useState('');
+  const[mCF,sMCF]=useState(false);const[eCl,sECl]=useState(null);const[mCtF,sMCtF]=useState(false);const[eCt,sECt]=useState(null);const[ctCid,sCtCid]=useState(null);
+  const[mTF,sMTF]=useState(false);const[eTk,sETk]=useState(null);const[conf,sConf]=useState(null);const[tkFlt,sTkFlt]=useState('');
+  const[quickNewCl,sQuickNewCl]=useState(false);
+  const[ctSort,sCtSort]=useState({col:'e',dir:'asc'});const[ctFltCo,sCtFltCo]=useState('');const[ctFltTp,sCtFltTp]=useState('');const[ctFltObj,sCtFltObj]=useState('');const[ctFltSt,sCtFltSt]=useState('');const[ctQ,sCtQ]=useState('');const[ctFltCtSt,sCtFltCtSt]=useState('');
+  const[dashPer,sDashPer]=useState('all');
+  const[notes,sNotes]=useState(()=>ls('notes',{}));
+  const[dashExp,sDashExp]=useState({});
+  const show=m=>sToast(m);
+
+  /* Persist to localStorage */
+  useEffect(()=>sv('cls',cls),[cls]);
+  useEffect(()=>sv('cts',cts),[cts]);
+  useEffect(()=>sv('tks',tks),[tks]);
+  useEffect(()=>sv('acts',acts),[acts]);
+  useEffect(()=>sv('notes',notes),[notes]);
+
+  const addNote=(cid,text)=>{const n={...notes};if(!n[cid])n[cid]=[];n[cid]=[{id:gid(),text,date:new Date().toISOString().slice(0,10)},...n[cid]];sNotes(n)};
+  const cos=useMemo(()=>[...new Set(cts.map(c=>c.co))].sort(),[cts]);const tps=useMemo(()=>[...new Set(cts.map(c=>c.tp))].sort(),[cts]);
+  const fCls=useMemo(()=>{
+    let res=cls.filter(c=>{const s=q.toLowerCase();const cc=cts.filter(ct=>ct.cid===c.id);return(!q||c.n.toLowerCase().includes(s)||c.ph.includes(s)||c.em.toLowerCase().includes(s)||cc.some(ct=>ct.num.toLowerCase().includes(s)||(ct.od.pl||'').toLowerCase().includes(s)||(ct.od.car||'').toLowerCase().includes(s)))&&(!ft||cc.some(ct=>ct.tp===ft))&&(!fc||cc.some(ct=>ct.co===fc))&&(!fo||cc.some(ct=>ct.obj===fo))});
+    if(clSort==='prem')res=[...res].sort((a,b)=>{const pa=cts.filter(ct=>ct.cid===a.id).reduce((s,c)=>s+c.pr,0);const pb=cts.filter(ct=>ct.cid===b.id).reduce((s,c)=>s+c.pr,0);return pb-pa});
+    else if(clSort==='kv')res=[...res].sort((a,b)=>{const ka=cts.filter(ct=>ct.cid===a.id).reduce((s,c)=>s+comC(c.comT,c.pr,c.comV),0);const kb=cts.filter(ct=>ct.cid===b.id).reduce((s,c)=>s+comC(c.comT,c.pr,c.comV),0);return kb-ka});
+    else if(clSort==='cnt')res=[...res].sort((a,b)=>cts.filter(ct=>ct.cid===b.id).length-cts.filter(ct=>ct.cid===a.id).length);
+    else res=[...res].sort((a,b)=>a.n.localeCompare(b.n));
+    return res;
+  },[cls,cts,q,ft,fc,fo,clSort]);
+  const stats=useMemo(()=>{
+    /* period filter */
+    const now=new Date();let pStart=null;
+    if(dashPer==='month'){pStart=new Date(now.getFullYear(),now.getMonth(),1)}
+    else if(dashPer==='quarter'){const q=Math.floor(now.getMonth()/3)*3;pStart=new Date(now.getFullYear(),q,1)}
+    else if(dashPer==='year'){pStart=new Date(now.getFullYear(),0,1)}
+    const pCts=pStart?cts.filter(ct=>{const d=new Date(ct.s);return d>=pStart}):cts;
+
+    const tp=pCts.reduce((a,c)=>a+c.pr,0);const tc=pCts.reduce((a,c)=>a+comC(c.comT,c.pr,c.comV),0);const byCo={};pCts.forEach(c=>{if(!byCo[c.co])byCo[c.co]={p:0,c:0,n:0};byCo[c.co].p+=c.pr;byCo[c.co].c+=comC(c.comT,c.pr,c.comV);byCo[c.co].n++});const byTp={};pCts.forEach(c=>{if(!byTp[c.tp])byTp[c.tp]={p:0,n:0};byTp[c.tp].p+=c.pr;byTp[c.tp].n++});
+    /* avg + renewal */
+    const avgPrem=pCts.length?Math.round(tp/pCts.length):0;
+    const avgCom=pCts.length?Math.round(tc/pCts.length):0;
+    const expiredAll=cts.filter(ct=>daysUntil(ct.e)<0);
+    const renewedCount=expiredAll.filter(ex=>{const cl=ex.cid;return cts.some(ct=>ct.id!==ex.id&&ct.cid===cl&&ct.tp===ex.tp&&new Date(ct.s)>new Date(ex.e))}).length;
+    const renewalPct=expiredAll.length?Math.round(renewedCount/expiredAll.length*100):0;
+    /* overdue & expiry */
+    const overdue=[];const overdueAmt=[];const soonInst=[];const expSoon=[];const expd=[];
+    cts.forEach(ct=>{const s=ctStatus(ct);if(s.st==='expired')expd.push(ct);else if(s.st!=='active')expSoon.push(ct);
+      ct.inst.forEach(ins=>{if(instOverdue(ins)){overdue.push({ct,ins,cl:cls.find(c=>c.id===ct.cid)});overdueAmt.push(ins.amt)}
+        if(instSoon(ins))soonInst.push({ct,ins,cl:cls.find(c=>c.id===ct.cid)})})});
+    const todayTasks=tks.filter(t=>!t.dn&&t.d&&daysUntil(t.d)===0);
+    const weekTasks=tks.filter(t=>!t.dn&&t.d&&daysUntil(t.d)>=0&&daysUntil(t.d)<=7);
+    return{tp,tc,byCo,byTp,cl:cls.length,ct:pCts.length,ctAll:cts.length,overdue,overdueSum:overdueAmt.reduce((a,b)=>a+b,0),soonInst,expSoon,expd,todayTasks,weekTasks,avgPrem,avgCom,renewalPct,renewedCount,expiredAll:expiredAll.length,
+      confirmedKv:acts.reduce((a,ac)=>a+ac.items.filter(i=>i.st==='ok'||i.st==='diff').reduce((s,i)=>s+i.act,0),0),
+      activeCount:cts.filter(ct=>ctStatus(ct).st==='active').length,
+      unpaidTotal:cts.flatMap(ct=>ct.inst).filter(i=>!i.paid).reduce((a,i)=>a+i.amt,0)
+    };},[cls,cts,tks,dashPer]);
+  const upcoming=useMemo(()=>{const items=[];const now=new Date();const m3=new Date();m3.setMonth(m3.getMonth()+3);
+    cts.forEach(ct=>{const ed=new Date(ct.e);const cl=cls.find(c=>c.id===ct.cid);if(ed>=now&&ed<=m3)items.push({d:ct.e,l:`Окончание: ${ct.tp}`,s:cl?.n||'',c:'#c0392b',cid:ct.cid});ct.inst.forEach(ins=>{if(!ins.paid){const dd=new Date(ins.due);if(dd>=now&&dd<=m3)items.push({d:ins.due,l:`Взнос ${fM(ins.amt)}`,s:cl?.n||'',c:'var(--acc-dk)',cid:ct.cid})}})});
+    cls.forEach(cl=>{if(!cl.bday)return;const bd=new Date(cl.bday);bd.setFullYear(now.getFullYear());if(bd<now)bd.setFullYear(now.getFullYear()+1);if(bd<=m3)items.push({d:bd.toISOString().slice(0,10),l:'День рождения',s:cl.n,c:'var(--pri)',cid:cl.id})});
+    tks.filter(t=>!t.dn&&t.d).forEach(t=>items.push({d:t.d,l:t.t,s:cls.find(c=>c.id===t.cid)?.n||'',c:'var(--sec)',cid:t.cid}));
+    return items.sort((a,b)=>new Date(a.d)-new Date(b.d)).slice(0,8)},[cls,cts,tks]);
+  const tog=id=>sTk(tks.map(x=>x.id===id?{...x,dn:!x.dn}:x));
+  const savCl=c=>{
+    /* Duplicate check */
+    const dup=cls.find(x=>x.id!==c.id&&x.n.toLowerCase().trim()===c.n.toLowerCase().trim());
+    if(dup&&!confirm(`Клиент с именем «${dup.n}» уже существует. Всё равно добавить?`))return;
+    if(eCl){sCl(cls.map(x=>x.id===c.id?c:x));if(sel?.id===c.id)sSel(c);show('Обновлено')}else{sCl([...cls,c]);show('Клиент добавлен')}sMCF(false);sECl(null)};
+  const savCt=c=>{if(eCt){sCt(cts.map(x=>x.id===c.id?c:x));show('Договор обновлён')}else{sCt([...cts,c]);show('Договор добавлен')}sMCtF(false);sECt(null);sCtCid(null)};
+  const savTk=t=>{if(eTk){sTk(tks.map(x=>x.id===t.id?t:x));show('Задача обновлена')}else{sTk([...tks,t]);show('Задача добавлена')}sMTF(false);sETk(null)};
+  const nav=[['dash',I.home,'Главная'],['cli',I.users,'Клиенты'],['ctg',I.table,'Договоры'],['tsk',I.clip,'Задачи'],['cal',I.cal,'Календарь'],['acts',I.doc,'Акты']];
+
+  return<div style={{display:'flex',minHeight:'100vh'}}>
+    <div style={{width:sb?220:58,minHeight:'100vh',background:'var(--sidebar)',transition:'width .2s',overflow:'hidden',flexShrink:0,display:'flex',flexDirection:'column'}}>
+      <div style={{padding:sb?'18px 14px':'18px 12px',display:'flex',alignItems:'center',gap:8,borderBottom:'1px solid rgba(255,255,255,.1)'}}>
+        <div onClick={()=>sSb(!sb)} style={{cursor:'pointer',flexShrink:0}}><VPLogo s={34} text={false} dark/></div>
+        {sb&&<span style={{fontFamily:"'Tenor Sans',serif",fontSize:15,color:'#fff'}}>АгентСфера</span>}
+      </div>
+      <div style={{padding:'12px 8px',flex:1}}>
+        {nav.map(([id,ic,lb])=><div key={id} onClick={()=>{sPg(id);if(id!=='cli')sSel(null)}} style={{display:'flex',alignItems:'center',gap:10,padding:sb?'10px 12px':'10px 14px',borderRadius:8,cursor:'pointer',marginBottom:2,background:(pg===id||(pg==='card'&&id==='cli'))?'rgba(254,196,0,.15)':'transparent',color:(pg===id||(pg==='card'&&id==='cli'))?'var(--acc)':'var(--tx-wd)',transition:'.15s',fontWeight:600}}>
+          <span style={{display:'flex'}}>{ic}</span>{sb&&<span style={{fontSize:13}}>{lb}</span>}
+        </div>)}
+      </div>
+      <div style={{padding:'12px 8px',borderTop:'1px solid rgba(255,255,255,.1)'}}>
+        {sb&&userName&&<div style={{padding:'8px 12px',marginBottom:6,display:'flex',alignItems:'center',gap:8}}>
+          <div style={{width:28,height:28,borderRadius:8,background:'var(--sec)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:12,fontWeight:700,flexShrink:0}}>{userName[0].toUpperCase()}</div>
+          <span style={{fontSize:12,color:'var(--tx-wd)',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{userName}</span>
+        </div>}
+        <div onClick={onOut} style={{display:'flex',alignItems:'center',gap:10,padding:sb?'10px 12px':'10px 14px',borderRadius:8,cursor:'pointer',color:'rgba(255,255,255,.35)'}}>
+          <span style={{display:'flex'}}>{I.out}</span>{sb&&<span style={{fontSize:13}}>Выйти</span>}
+        </div>
+      </div>
+    </div>
+
+    <div style={{flex:1,padding:24,overflowY:'auto',minWidth:0}}>
+
+    {pg==='dash'&&<div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:22,gap:12,flexWrap:'wrap'}}>
+        <h1 style={{fontSize:26,margin:0}}>Дашборд</h1>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          <div style={{position:'relative'}}><span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)',display:'flex'}}>{I.search}</span><input value={gSearch} onChange={e=>sGSearch(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&gSearch.trim()){sQ(gSearch.trim());sGSearch('');sPg('cli')}}} placeholder="Быстрый поиск клиента..." style={{width:220,paddingLeft:32,fontSize:12}}/></div>
+          <select value={dashPer} onChange={e=>sDashPer(e.target.value)} style={{width:'auto',minWidth:130,padding:'8px 12px',fontSize:12}}>
+            <option value="all">Все время</option>
+            <option value="month">Этот месяц</option>
+            <option value="quarter">Этот квартал</option>
+            <option value="year">Этот год</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Today block — collapsible */}
+      {(stats.overdue.length>0||stats.todayTasks.length>0||stats.expSoon.length>0||stats.soonInst.length>0)&&<Cd style={{marginBottom:16,padding:18,border:stats.overdue.length?'1px solid #c0392b':'1px solid var(--brd-lt)',background:stats.overdue.length?'#fef6f6':'var(--card)'}}>
+        <h3 style={{fontSize:15,marginBottom:14,color:stats.overdue.length?'#c0392b':'var(--pri)'}}>Требует внимания</h3>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:10}}>
+          {stats.overdue.length>0&&<div onClick={()=>sDashExp({...dashExp,od:!dashExp.od})} style={{padding:12,borderRadius:8,background:'#fde8e8',borderLeft:'4px solid #c0392b',cursor:'pointer'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><div style={{fontSize:22,fontWeight:900,color:'#c0392b'}}>{stats.overdue.length}</div><span style={{color:'#c0392b',fontSize:10,fontWeight:700}}>{dashExp.od?'Скрыть':'Подробнее'}</span></div>
+            <div style={{fontSize:11,fontWeight:700,color:'#c0392b'}}>Просрочено взносов</div>
+            <div style={{fontSize:12,fontWeight:700,color:'#c0392b',marginTop:2}}>Долг: {fM(stats.overdueSum)}</div>
+          </div>}
+          {stats.expSoon.length>0&&<div onClick={()=>sDashExp({...dashExp,ex:!dashExp.ex})} style={{padding:12,borderRadius:8,background:'#fff5d0',borderLeft:'4px solid var(--acc-dk)',cursor:'pointer'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><div style={{fontSize:22,fontWeight:900,color:'var(--acc-dk)'}}>{stats.expSoon.length}</div><span style={{color:'var(--acc-dk)',fontSize:10,fontWeight:700}}>{dashExp.ex?'Скрыть':'Подробнее'}</span></div>
+            <div style={{fontSize:11,fontWeight:700,color:'var(--acc-dk)'}}>Договоров истекает скоро</div>
+          </div>}
+          {stats.soonInst.length>0&&<div onClick={()=>sDashExp({...dashExp,si:!dashExp.si})} style={{padding:12,borderRadius:8,background:'rgba(60,168,168,.08)',borderLeft:'4px solid var(--sec)',cursor:'pointer'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><div style={{fontSize:22,fontWeight:900,color:'var(--sec)'}}>{stats.soonInst.length}</div><span style={{color:'var(--sec)',fontSize:10,fontWeight:700}}>{dashExp.si?'Скрыть':'Подробнее'}</span></div>
+            <div style={{fontSize:11,fontWeight:700,color:'var(--sec)'}}>Взносов на этой неделе</div>
+          </div>}
+          {stats.todayTasks.length>0&&<div style={{padding:12,borderRadius:8,background:'rgba(1,87,92,.06)',borderLeft:'4px solid var(--pri)'}}>
+            <div style={{fontSize:22,fontWeight:900,color:'var(--pri)'}}>{stats.todayTasks.length}</div>
+            <div style={{fontSize:11,fontWeight:700,color:'var(--pri)'}}>Задач на сегодня</div>
+          </div>}
+        </div>
+        {/* Expandable details */}
+        {dashExp.od&&stats.overdue.length>0&&<div className="fi" style={{marginTop:12,paddingTop:10,borderTop:'1px solid var(--brd-lt)'}}>
+          {stats.overdue.slice(0,8).map((o,i)=><div key={i} onClick={()=>{if(o.cl){sSel(o.cl);sPg('card')}}} style={{display:'flex',alignItems:'center',gap:8,padding:'5px 0',fontSize:12,cursor:'pointer'}}>
+            <div style={{width:6,height:6,background:'#c0392b',transform:'rotate(45deg)',borderRadius:1,flexShrink:0}}/>
+            <span style={{fontWeight:700,color:'#c0392b',minWidth:70}}>{fM(o.ins.amt)}</span>
+            <span style={{color:'var(--tx)',fontWeight:600,flex:1}}>{o.cl?o.cl.n:'—'}</span>
+            <span style={{color:'var(--tx3)',fontSize:11}}>{o.ct.co}, {o.ct.tp}</span>
+            <span style={{color:'#c0392b',fontSize:11,fontWeight:700}}>{-daysUntil(o.ins.due)} дн.</span>
+          </div>)}
+        </div>}
+        {dashExp.ex&&stats.expSoon.length>0&&<div className="fi" style={{marginTop:12,paddingTop:10,borderTop:'1px solid var(--brd-lt)'}}>
+          {stats.expSoon.slice(0,8).map((ct,i)=>{const cl=cls.find(c=>c.id===ct.cid);const s=ctStatus(ct);return<div key={i} onClick={()=>{if(cl){sSel(cl);sPg('card')}}} style={{display:'flex',alignItems:'center',gap:8,padding:'5px 0',fontSize:12,cursor:'pointer'}}>
+            <div style={{width:6,height:6,background:'var(--acc-dk)',transform:'rotate(45deg)',borderRadius:1,flexShrink:0}}/>
+            <span style={{color:'var(--tx)',fontWeight:600,flex:1}}>{cl?cl.n:'—'}</span>
+            <span style={{color:'var(--tx3)',fontSize:11}}>{ct.co}, {ct.tp}</span>
+            <span style={{color:'var(--acc-dk)',fontSize:11,fontWeight:700}}>{s.label}</span>
+          </div>})}
+        </div>}
+        {dashExp.si&&stats.soonInst.length>0&&<div className="fi" style={{marginTop:12,paddingTop:10,borderTop:'1px solid var(--brd-lt)'}}>
+          {stats.soonInst.slice(0,8).map((o,i)=><div key={i} onClick={()=>{if(o.cl){sSel(o.cl);sPg('card')}}} style={{display:'flex',alignItems:'center',gap:8,padding:'5px 0',fontSize:12,cursor:'pointer'}}>
+            <div style={{width:6,height:6,background:'var(--sec)',transform:'rotate(45deg)',borderRadius:1,flexShrink:0}}/>
+            <span style={{fontWeight:700,color:'var(--sec)',minWidth:70}}>{fM(o.ins.amt)}</span>
+            <span style={{color:'var(--tx)',fontWeight:600,flex:1}}>{o.cl?o.cl.n:'—'}</span>
+            <span style={{color:'var(--tx3)',fontSize:11}}>{o.ct.co}, {o.ct.tp}</span>
+            <span style={{color:'var(--sec)',fontSize:11}}>через {daysUntil(o.ins.due)} дн.</span>
+          </div>)}
+        </div>}
+      </Cd>}
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(155px,1fr))',gap:12,marginBottom:20}}>
+        <Cd style={{padding:16}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}><span style={{fontSize:10,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:'.06em'}}>Сборы</span><span style={{color:'var(--acc-dk)'}}>{I.coin}</span></div><div style={{fontSize:22,fontWeight:900,color:'var(--acc-dk)'}}>{fM(stats.tp)}</div><div style={{fontSize:10,color:'var(--tx3)',marginTop:3}}>{stats.ct} дог., ср. {fM(stats.avgPrem)}</div></Cd>
+        <Cd style={{padding:16}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}><span style={{fontSize:10,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:'.06em'}}>Комиссия</span><span style={{color:'var(--pri)'}}>{I.trophy}</span></div><div style={{fontSize:22,fontWeight:900,color:'var(--pri)'}}>{fM(stats.tc)}</div><div style={{fontSize:10,color:'var(--tx3)',marginTop:3}}>Подтверждено: {fM(stats.confirmedKv)}</div></Cd>
+        <Cd style={{padding:16}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}><span style={{fontSize:10,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:'.06em'}}>Клиенты</span><span style={{color:'var(--sec)'}}>{I.users}</span></div><div style={{fontSize:22,fontWeight:900,color:'var(--sec)'}}>{stats.cl}</div><div style={{fontSize:10,color:'var(--tx3)',marginTop:3}}>Договоров: {stats.activeCount} акт. / {stats.ctAll} всего</div></Cd>
+        <Cd style={{padding:16,border:stats.unpaidTotal>0?'1px solid #c0392b':'1px solid var(--brd-lt)',background:stats.unpaidTotal>0?'#fef6f6':'var(--card)'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}><span style={{fontSize:10,fontWeight:700,color:stats.unpaidTotal>0?'#c0392b':'var(--tx3)',textTransform:'uppercase',letterSpacing:'.06em'}}>Задолженность</span><span style={{color:stats.unpaidTotal>0?'#c0392b':'var(--tx3)'}}>{I.alertCircle}</span></div><div style={{fontSize:22,fontWeight:900,color:stats.unpaidTotal>0?'#c0392b':'var(--pri)'}}>{stats.unpaidTotal>0?fM(stats.unpaidTotal):'0₽'}</div><div style={{fontSize:10,color:stats.unpaidTotal>0?'#c0392b':'var(--tx3)',marginTop:3}}>{stats.overdueSum>0?`Просрочено: ${fM(stats.overdueSum)}`:'Все взносы оплачены'}</div></Cd>
+      </div>
+
+      {/* Analytics — collapsed by default */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:14}}>
+        <Cd style={{padding:dashExp.co?20:14,cursor:'pointer'}} onClick={()=>sDashExp({...dashExp,co:!dashExp.co})}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <h3 style={{fontSize:14,margin:0}}>По страховым компаниям</h3>
+            <span style={{fontSize:10,color:'var(--tx3)',fontWeight:600}}>{dashExp.co?'Скрыть':'Показать'}</span>
+          </div>
+          {!dashExp.co&&<div style={{fontSize:12,color:'var(--tx2)',marginTop:6}}>{Object.keys(stats.byCo).length} компаний{Object.entries(stats.byCo).sort((a,b)=>b[1].p-a[1].p)[0]?`, лидер: ${Object.entries(stats.byCo).sort((a,b)=>b[1].p-a[1].p)[0][0]} ${stats.tp?Math.round(Object.entries(stats.byCo).sort((a,b)=>b[1].p-a[1].p)[0][1].p/stats.tp*100):0}%`:''}</div>}
+          {dashExp.co&&<div className="fi" style={{marginTop:14}}>
+            {Object.entries(stats.byCo).sort((a,b)=>b[1].p-a[1].p).map(([co,d])=>{const pc=stats.tp?Math.round(d.p/stats.tp*100):0;
+              return<div key={co} style={{marginBottom:12}} onClick={e=>e.stopPropagation()}><div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:4}}><span style={{fontWeight:700}}>{co}</span><span style={{color:'var(--tx2)',fontFamily:'monospace',fontSize:11}}>{fM(d.p)} ({pc}%)</span></div>
+                <div style={{height:6,borderRadius:3,background:'var(--bg)'}}><div style={{height:'100%',borderRadius:3,background:'var(--sec)',width:pc+'%',transition:'width .4s'}}/></div>
+                <div style={{fontSize:10,color:'var(--pri)',fontWeight:700,marginTop:2}}>КВ: {fM(d.c)}</div></div>})}
+          </div>}
+        </Cd>
+        <Cd style={{padding:dashExp.tp?20:14,cursor:'pointer'}} onClick={()=>sDashExp({...dashExp,tp:!dashExp.tp})}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <h3 style={{fontSize:14,margin:0}}>По типам страхования</h3>
+            <span style={{fontSize:10,color:'var(--tx3)',fontWeight:600}}>{dashExp.tp?'Скрыть':'Показать'}</span>
+          </div>
+          {!dashExp.tp&&<div style={{fontSize:12,color:'var(--tx2)',marginTop:6}}>{Object.keys(stats.byTp).length} типов{Object.entries(stats.byTp).sort((a,b)=>b[1].p-a[1].p)[0]?`, лидер: ${Object.entries(stats.byTp).sort((a,b)=>b[1].p-a[1].p)[0][0]} ${stats.tp?Math.round(Object.entries(stats.byTp).sort((a,b)=>b[1].p-a[1].p)[0][1].p/stats.tp*100):0}%`:''}</div>}
+          {dashExp.tp&&<div className="fi" style={{marginTop:14}}>
+            {Object.entries(stats.byTp).sort((a,b)=>b[1].p-a[1].p).map(([tp,d])=>{const pc=stats.tp?Math.round(d.p/stats.tp*100):0;
+              return<div key={tp} style={{marginBottom:12}} onClick={e=>e.stopPropagation()}><div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:4}}><span style={{fontWeight:700}}>{tp}</span><span style={{color:'var(--tx2)',fontFamily:'monospace',fontSize:11}}>{fM(d.p)}, {d.n} шт ({pc}%)</span></div>
+                <div style={{height:6,borderRadius:3,background:'var(--bg)'}}><div style={{height:'100%',borderRadius:3,background:'var(--acc)',width:pc+'%',transition:'width .4s'}}/></div></div>})}
+          </div>}
+        </Cd>
+      </div>
+      <Cd><h3 style={{fontSize:15,marginBottom:14}}>Задачи и дни рождения</h3>
+        {(()=>{const items=[];const now=new Date();const m1=new Date();m1.setMonth(m1.getMonth()+1);
+          tks.filter(t=>!t.dn&&t.d).forEach(t=>{const dd=new Date(t.d);if(dd>=new Date(now.getFullYear(),now.getMonth(),now.getDate()-1)&&dd<=m1)items.push({d:t.d,l:t.t,s:cls.find(c=>c.id===t.cid)?.n||'',c:'var(--sec)',cid:t.cid,tp:'task'})});
+          cls.forEach(cl=>{if(!cl.bday)return;const bd=new Date(cl.bday);bd.setFullYear(now.getFullYear());if(bd<now)bd.setFullYear(now.getFullYear()+1);if(bd<=m1)items.push({d:bd.toISOString().slice(0,10),l:'День рождения',s:cl.n,c:'var(--pri)',cid:cl.id,tp:'bday'})});
+          items.sort((a,b)=>new Date(a.d)-new Date(b.d));
+          return!items.length?<p style={{color:'var(--tx3)',textAlign:'center',padding:16}}>Нет задач на ближайший месяц</p>:
+            items.slice(0,8).map((ev,i)=><div key={i} onClick={()=>{const cl=cls.find(c=>c.id===ev.cid);if(cl){sSel(cl);sPg('card')}}} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 0',borderBottom:'1px solid var(--brd-lt)',cursor:'pointer'}}>
+              <div style={{width:6,height:6,background:ev.c,transform:'rotate(45deg)',borderRadius:1,flexShrink:0}}/>
+              <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700}}>{ev.l}</div><div style={{fontSize:11,color:'var(--tx3)'}}>{ev.s}</div></div>
+              <span style={{fontSize:12,color:'var(--tx2)',fontFamily:'monospace'}}>{fD(ev.d)}</span>
+            </div>);
+        })()}
+      </Cd>
+    </div>}
+
+    {pg==='cli'&&<div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,flexWrap:'wrap',gap:10}}>
+        <h1 style={{fontSize:22}}>Клиенты</h1>
+        <div style={{display:'flex',gap:6}}><Btn ghost onClick={()=>expCSV(cls,cts)} icon={I.dl}>Экспорт</Btn><Btn primary onClick={()=>{sECl(null);sMCF(true)}} icon={I.plus}>Клиент</Btn></div>
+      </div>
+      <div style={{display:'flex',gap:8,marginBottom:14}}>
+        <div style={{flex:1,position:'relative'}}><span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)',display:'flex'}}>{I.search}</span><input value={q} onChange={e=>sQ(e.target.value)} placeholder="Поиск по имени, телефону, номеру, госномеру..." style={{paddingLeft:36}}/></div>
+        <Btn ghost onClick={()=>sSf(!sf)} icon={I.filter} style={{background:(ft||fc||fo)?'rgba(60,168,168,.1)':'var(--card)'}}>Фильтры</Btn>
+      </div>
+      {sf&&<Cd className="fi" style={{display:'flex',gap:8,marginBottom:14,padding:12,flexWrap:'wrap',alignItems:'center'}}>
+        <select value={ft} onChange={e=>sFt(e.target.value)} style={{width:'auto',minWidth:120}}><option value="">Все типы</option>{tps.map(t=><option key={t}>{t}</option>)}</select>
+        <select value={fc} onChange={e=>sFc(e.target.value)} style={{width:'auto',minWidth:120}}><option value="">Все СК</option>{cos.map(c=><option key={c}>{c}</option>)}</select>
+        <select value={fo} onChange={e=>sFo(e.target.value)} style={{width:'auto',minWidth:140}}><option value="">Все объекты</option>{OT.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}</select>
+        <select value={clSort} onChange={e=>sClSort(e.target.value)} style={{width:'auto',minWidth:130}}><option value="name">По имени</option><option value="prem">По премии</option><option value="kv">По КВ</option><option value="cnt">По кол-ву дог.</option></select>
+        {(ft||fc||fo)&&<Btn small danger onClick={()=>{sFt('');sFc('');sFo('')}}>Сбросить</Btn>}
+      </Cd>}
+      {!fCls.length&&<Cd style={{textAlign:'center',padding:40}}><div style={{color:'var(--sec)',marginBottom:8}}>{I.users}</div><p style={{color:'var(--tx2)',fontFamily:"'Tenor Sans',serif",fontSize:15}}>Нет клиентов</p><p style={{color:'var(--tx3)',fontSize:12,marginBottom:14}}>Добавьте первого клиента чтобы начать работу</p><Btn primary onClick={()=>{sECl(null);sMCF(true)}} icon={I.plus}>Добавить клиента</Btn></Cd>}
+      {fCls.map(c=>{const cc=cts.filter(ct=>ct.cid===c.id);const tp=cc.reduce((a,ct)=>a+ct.pr,0);const stLbl=c.status==='potential'?'Потенциальный':c.status==='inactive'?'Неактивный':'';const stClr=c.status==='potential'?'var(--acc-dk)':c.status==='inactive'?'var(--tx3)':'';
+        return<Cd key={c.id} style={{marginBottom:8,padding:14,cursor:'pointer',opacity:c.status==='inactive'?0.6:1}} onClick={()=>{sSel(c);sPg('card')}}>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <div style={{width:42,height:42,borderRadius:12,background:c.status==='potential'?'var(--acc-dk)':c.status==='inactive'?'var(--tx3)':'var(--pri)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:16,fontWeight:700,flexShrink:0,fontFamily:"'Tenor Sans',serif"}}>{c.n[0]}</div>
+            <div style={{flex:1,minWidth:0}}><div style={{fontSize:14,fontWeight:700,marginBottom:3}}>{c.n}{stLbl&&<span style={{fontSize:10,fontWeight:600,color:stClr,marginLeft:8,background:stClr+'18',padding:'1px 6px',borderRadius:4}}>{stLbl}</span>}</div>
+              <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{cc.slice(0,3).map(ct=><Tag key={ct.id} text={ct.co+' · '+ct.tp}/>)}{cc.length>3&&<Tag text={`+${cc.length-3}`} bg="var(--bg)" color="var(--tx3)"/>}</div></div>
+            <div style={{textAlign:'right',flexShrink:0}}><div style={{fontSize:15,fontWeight:900,color:'var(--pri)'}}>{fM(tp)}</div><div style={{fontSize:11,color:'var(--tx3)'}}>{cc.length} дог.</div></div>
+          </div></Cd>})}
+      <div style={{padding:10,color:'var(--tx3)',fontSize:12}}>Показано {fCls.length} из {cls.length}</div>
+    </div>}
+
+    {pg==='card'&&sel&&(()=>{const cc=cts.filter(ct=>ct.cid===sel.id);const ct2=tks.filter(t=>t.cid===sel.id);
+      return<div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+          <button onClick={()=>{sPg('cli');sSel(null)}} style={{background:'none',border:'none',color:'var(--tx2)',cursor:'pointer',fontSize:13,fontFamily:'inherit',fontWeight:600,display:'flex',alignItems:'center',gap:4}}>{I.chL} Назад</button>
+          <div style={{display:'flex',gap:6}}><Btn small ghost onClick={()=>{sECl(sel);sMCF(true)}} icon={I.edit}>Изменить</Btn><Btn small danger onClick={()=>sConf({tp:'cl',id:sel.id,nm:sel.n})} icon={I.trash}>Удалить</Btn></div>
+        </div>
+        <Cd style={{marginBottom:14}}>
+          <div style={{display:'flex',gap:14,alignItems:'center'}}>
+            <div style={{width:56,height:56,borderRadius:14,background:'var(--pri)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:22,fontFamily:"'Tenor Sans',serif"}}>{sel.n[0]}</div>
+            <div style={{flex:1}}><h2 style={{fontSize:20,marginBottom:5}}>{sel.n}</h2>
+              <div style={{display:'flex',gap:10,flexWrap:'wrap',fontSize:12,color:'var(--tx2)',alignItems:'center'}}>
+                {sel.ph&&<a href={'tel:'+sel.ph.replace(/[^\d+]/g,'')} style={{display:'flex',alignItems:'center',gap:3,color:'var(--sec)',textDecoration:'none',fontWeight:600}}>{I.phone} {sel.ph}</a>}
+                {sel.em&&<a href={'mailto:'+sel.em} style={{display:'flex',alignItems:'center',gap:3,color:'var(--tx2)',textDecoration:'none'}}>{I.mail} {sel.em}</a>}
+                {sel.bday&&<span style={{display:'flex',alignItems:'center',gap:3}}>{I.cake} {fD(sel.bday)}</span>}
+                {sel.pf&&<Tag text={sel.pf}/>}
+              </div></div></div>
+          {sel.nt&&<div style={{marginTop:12,padding:10,background:'var(--bg)',borderRadius:8,fontSize:12,color:'var(--tx2)',display:'flex',alignItems:'center',gap:6}}>{I.note} {sel.nt}</div>}
+          <div style={{marginTop:8,padding:12,background:sel.link?'rgba(60,168,168,.06)':'var(--bg)',borderRadius:8,fontSize:12,display:'flex',alignItems:'center',justifyContent:'space-between',border:'1px solid var(--brd-lt)'}}>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <span style={{color:'var(--sec)',display:'flex'}}>{I.doc}</span>
+              {sel.link
+                ? <a href={sel.link} target="_blank" rel="noopener" style={{color:'var(--sec)',fontWeight:600,textDecoration:'none',borderBottom:'1px dashed var(--sec)'}}>Документы клиента</a>
+                : <span style={{color:'var(--tx3)'}}>Нет ссылки на документы</span>
+              }
+            </div>
+            <Btn small ghost onClick={()=>{sECl(sel);sMCF(true)}} icon={I.edit}>{sel.link?'Изменить':'Добавить'}</Btn>
+          </div>
+        </Cd>
+
+        {/* Client totals summary */}
+        {cc.length>0&&<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:10,marginBottom:14}}>
+          <div style={{background:'var(--card)',border:'1px solid var(--brd-lt)',borderRadius:8,padding:12,textAlign:'center'}}><div style={{fontSize:18,fontWeight:900,color:'var(--acc-dk)'}}>{fM(cc.reduce((a,ct)=>a+ct.pr,0))}</div><div style={{fontSize:10,color:'var(--tx3)',fontWeight:600}}>Общая премия</div></div>
+          <div style={{background:'var(--card)',border:'1px solid var(--brd-lt)',borderRadius:8,padding:12,textAlign:'center'}}><div style={{fontSize:18,fontWeight:900,color:'var(--pri)'}}>{fM(cc.reduce((a,ct)=>a+comC(ct.comT,ct.pr,ct.comV),0))}</div><div style={{fontSize:10,color:'var(--tx3)',fontWeight:600}}>Общая КВ</div></div>
+          <div style={{background:'var(--card)',border:'1px solid var(--brd-lt)',borderRadius:8,padding:12,textAlign:'center'}}><div style={{fontSize:18,fontWeight:900,color:'var(--sec)'}}>{cc.flatMap(ct=>ct.inst).filter(i=>i.paid).length} / {cc.flatMap(ct=>ct.inst).length}</div><div style={{fontSize:10,color:'var(--tx3)',fontWeight:600}}>Взносов оплачено</div></div>
+          <div style={{background:'var(--card)',border:'1px solid var(--brd-lt)',borderRadius:8,padding:12,textAlign:'center'}}><div style={{fontSize:18,fontWeight:900,color:cc.filter(ct=>ctStatus(ct).st==='active').length===cc.length?'var(--pri)':'#c0392b'}}>{cc.filter(ct=>ctStatus(ct).st==='active').length} / {cc.length}</div><div style={{fontSize:10,color:'var(--tx3)',fontWeight:600}}>Активных</div></div>
+        </div>}
+
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}><h3 style={{fontSize:16}}>Договоры ({cc.length})</h3><Btn small primary onClick={()=>{sECt(null);sCtCid(sel.id);sMCtF(true)}} icon={I.plus}>Договор</Btn></div>
+        {!cc.length&&<Cd style={{textAlign:'center',padding:30}}><div style={{color:'var(--sec)',marginBottom:8}}>{I.doc}</div><p style={{color:'var(--tx2)',fontSize:13}}>У клиента нет договоров</p><p style={{color:'var(--tx3)',fontSize:11,marginBottom:12}}>Добавьте первый договор</p><Btn small primary onClick={()=>{sECt(null);sCtCid(sel.id);sMCtF(true)}} icon={I.plus}>Добавить договор</Btn></Cd>}
+        {cc.map(ct=><Cd key={ct.id} style={{marginBottom:10,padding:14}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+            <div><div style={{display:'flex',gap:6,alignItems:'center',marginBottom:3}}><span style={{color:'var(--sec)',display:'flex'}}>{objIc(ct.obj)}</span><span style={{fontSize:14,fontWeight:700}}>{ct.co} — {ct.tp}</span>
+              {(()=>{const s=ctStatus(ct);return<span style={{padding:'2px 8px',borderRadius:5,fontSize:10,fontWeight:700,background:s.bg,color:s.color,marginLeft:6}}>{s.label}</span>})()}
+            </div>
+              <div style={{fontSize:11,color:'var(--tx3)',fontFamily:'monospace'}}>{ct.num}</div></div>
+            <div style={{display:'flex',gap:4}}><button onClick={()=>{sECt(ct);sCtCid(sel.id);sMCtF(true)}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',display:'flex'}}>{I.edit}</button><button onClick={()=>sConf({tp:'ct',id:ct.id,nm:`${ct.co} ${ct.num}`})} style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',display:'flex'}}>{I.trash}</button></div>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,fontSize:12,marginBottom:ct.inst.length?10:0}}>
+            <div><span style={{color:'var(--tx3)'}}>Период: </span><span style={{fontWeight:700}}>{fD(ct.s)} — {fD(ct.e)}</span></div>
+            <div><span style={{color:'var(--tx3)'}}>Премия: </span><span style={{fontWeight:900,color:'var(--acc-dk)'}}>{fM(ct.pr)}</span></div>
+            <div><span style={{color:'var(--tx3)'}}>КВ: </span><span style={{fontWeight:900,color:'var(--pri)'}}>{ct.comT==='%'?`${ct.comV}%=`:''}{fM(comC(ct.comT,ct.pr,ct.comV))}</span></div>
+          </div>
+          {ct.obj==='auto'&&ct.od.car&&<div style={{fontSize:12,color:'var(--tx2)',display:'flex',alignItems:'center',gap:4,marginBottom:ct.inst.length?8:0}}>{I.car} {ct.od.car} {ct.od.pl&&<span style={{fontFamily:'monospace',marginLeft:4}}>{ct.od.pl}</span>}</div>}
+          {ct.obj==='realty'&&ct.od.addr&&<div style={{fontSize:12,color:'var(--tx2)',display:'flex',alignItems:'center',gap:4,marginBottom:ct.inst.length?8:0}}>{I.house} {ct.od.rtype} — {ct.od.addr} {ct.od.area&&`(${ct.od.area}м²)`}</div>}
+          {ct.obj==='life'&&ct.od.insured&&<div style={{fontSize:12,color:'var(--tx2)',display:'flex',alignItems:'center',gap:4,marginBottom:ct.inst.length?8:0}}>{I.heart} {ct.od.insured}, {ct.od.age} лет, {fM(ct.od.sum)}</div>}
+          {ct.inst.length>0&&<div style={{background:'var(--bg)',borderRadius:8,padding:10}}>
+            <div style={{fontSize:10,fontWeight:700,color:'var(--tx3)',marginBottom:6,textTransform:'uppercase',letterSpacing:'.06em'}}>Взносы</div>
+            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{ct.inst.map((ins,ii)=>{const od=instOverdue(ins);const sn=instSoon(ins);return<div key={ins.id} onClick={()=>{const ni=[...ct.inst];ni[ii]={...ni[ii],paid:!ni[ii].paid};sCt(cts.map(x=>x.id===ct.id?{...x,inst:ni}:x))}} style={{padding:'6px 10px',borderRadius:6,fontSize:11,fontWeight:700,cursor:'pointer',background:ins.paid?'#e0f5ee':od?'#fde8e8':sn?'#fff5d0':'var(--bg)',color:ins.paid?'var(--pri)':od?'#c0392b':sn?'var(--acc-dk)':'var(--tx2)',border:'1px solid '+(ins.paid?'#b8e4d0':od?'#f5c4c4':sn?'#ffe8a0':'var(--brd-lt)')}}>{ins.paid?'Оплачен':od?'Просрочен':sn?'Скоро':'Ожидание'}: {fM(ins.amt)}, {fD(ins.due)}{od&&!ins.paid?` (${-daysUntil(ins.due)} дн.)`:''}</div>})}</div>
+          </div>}
+          {ct.nt&&<div style={{fontSize:11,color:'var(--tx2)',marginTop:6,display:'flex',alignItems:'center',gap:4}}>{I.note} {ct.nt}</div>}
+          <div style={{fontSize:11,marginTop:4,display:'flex',alignItems:'center',gap:4}}>
+            <span style={{color:'var(--sec)',display:'flex'}}>{I.doc}</span>
+            {ct.link
+              ? <a href={ct.link} target="_blank" rel="noopener" style={{color:'var(--sec)',fontWeight:600,textDecoration:'none',borderBottom:'1px dashed var(--sec)'}}>Документы договора</a>
+              : <span style={{color:'var(--tx3)'}}>Нет ссылки</span>
+            }
+          </div>
+        </Cd>)}
+        <Sep/>
+        {/* Notes / History */}
+        <div style={{marginBottom:16}}>
+          <h3 style={{fontSize:16,marginBottom:10}}>Заметки и история</h3>
+          <div style={{display:'flex',gap:8,marginBottom:12}}>
+            <input id="noteInput" placeholder="Добавить заметку — звонок, встреча, договорённость..." style={{flex:1}} onKeyDown={e=>{if(e.key==='Enter'&&e.target.value.trim()){addNote(sel.id,e.target.value.trim());e.target.value=''}}}/>
+            <Btn small primary onClick={()=>{const inp=document.getElementById('noteInput');if(inp.value.trim()){addNote(sel.id,inp.value.trim());inp.value=''}}}>Добавить</Btn>
+          </div>
+          {(notes[sel.id]||[]).length===0?<p style={{color:'var(--tx3)',fontSize:12,padding:4}}>Нет заметок</p>:
+            (notes[sel.id]||[]).map(nt=><div key={nt.id} style={{display:'flex',gap:8,padding:'8px 0',borderBottom:'1px solid var(--brd-lt)',alignItems:'flex-start'}}>
+              <div style={{width:6,height:6,background:'var(--sec)',transform:'rotate(45deg)',borderRadius:1,flexShrink:0,marginTop:6}}/>
+              <div style={{flex:1}}><div style={{fontSize:12,color:'var(--tx)'}}>{nt.text}</div><div style={{fontSize:10,color:'var(--tx3)',marginTop:2}}>{fD(nt.date)}</div></div>
+              <button onClick={()=>{const n={...notes};n[sel.id]=n[sel.id].filter(x=>x.id!==nt.id);sNotes(n)}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',display:'flex',padding:2,flexShrink:0}}>{I.trash}</button>
+            </div>)
+          }
+        </div>
+        <Sep/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}><h3 style={{fontSize:16}}>Задачи ({ct2.length})</h3><Btn small ghost onClick={()=>{sETk(null);sMTF(true)}} icon={I.plus}>Задача</Btn></div>
+        {!ct2.length?<p style={{color:'var(--tx3)',fontSize:12,padding:8}}>Нет задач</p>:
+          ct2.map(t=><div key={t.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 0',borderBottom:'1px solid var(--brd-lt)'}}>
+            <div onClick={()=>tog(t.id)} style={{width:20,height:20,borderRadius:5,border:t.dn?'none':'2px solid var(--brd)',background:t.dn?'var(--pri)':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#fff',flexShrink:0}}>{t.dn&&I.check}</div>
+            <span style={{fontSize:12,textDecoration:t.dn?'line-through':'none',color:t.dn?'var(--tx3)':'var(--tx)',flex:1}}>{t.t}</span>
+            <span style={{fontSize:10,color:'var(--tx3)',fontFamily:'monospace'}}>{fD(t.d)}</span>
+            <Tag text={pN(t.p)} bg={pB(t.p)} color={pC(t.p)}/>
+          </div>)}
+      </div>})()}
+
+    {/* Contracts Table */}
+    {pg==='ctg'&&(()=>{
+      /* reconciliation status from acts */
+      const getActSt=(ct)=>{
+        for(const a of acts){for(const it of a.items){if(it.num&&ct.num&&it.num.toLowerCase()===ct.num.toLowerCase()){return it.st==='ok'?{st:'ok',fact:it.act}:it.st==='diff'?{st:'diff',fact:it.act}:{st:'unk',fact:0}}}}return{st:'none',fact:0}};
+
+      /* filter */
+      const sq=ctQ.toLowerCase();
+      let fcts=cts.filter(ct=>{
+        const cl=cls.find(c=>c.id===ct.cid);const clN=cl?cl.n.toLowerCase():'';
+        const mq=!ctQ||clN.includes(sq)||ct.num.toLowerCase().includes(sq)||ct.co.toLowerCase().includes(sq)||(ct.od.pl||'').toLowerCase().includes(sq)||(ct.od.car||'').toLowerCase().includes(sq);
+        const as=getActSt(ct);
+        const cs=ctStatus(ct);
+        const mCtSt=!ctFltCtSt||(ctFltCtSt==='active'&&cs.st==='active')||(ctFltCtSt==='soon'&&(cs.st==='soon7'||cs.st==='soon14'||cs.st==='soon30'))||(ctFltCtSt==='expired'&&cs.st==='expired');
+        return mq&&(!ctFltCo||ct.co===ctFltCo)&&(!ctFltTp||ct.tp===ctFltTp)&&(!ctFltObj||ct.obj===ctFltObj)&&(!ctFltSt||as.st===ctFltSt)&&mCtSt;
+      });
+
+      /* sort */
+      const sc=ctSort.col;const sd=ctSort.dir==='asc'?1:-1;
+      fcts=[...fcts].sort((a,b)=>{
+        const ca=cls.find(c=>c.id===a.cid);const cb=cls.find(c=>c.id===b.cid);
+        let va,vb;
+        if(sc==='client'){va=(ca?ca.n:'').toLowerCase();vb=(cb?cb.n:'').toLowerCase()}
+        else if(sc==='co'){va=a.co.toLowerCase();vb=b.co.toLowerCase()}
+        else if(sc==='tp'){va=a.tp.toLowerCase();vb=b.tp.toLowerCase()}
+        else if(sc==='num'){va=a.num.toLowerCase();vb=b.num.toLowerCase()}
+        else if(sc==='s'){va=a.s;vb=b.s}
+        else if(sc==='e'){va=a.e;vb=b.e}
+        else if(sc==='ctst'){va=daysUntil(a.e);vb=daysUntil(b.e)}
+        else if(sc==='pr'){va=a.pr;vb=b.pr}
+        else if(sc==='kv'){va=comC(a.comT,a.pr,a.comV);vb=comC(b.comT,b.pr,b.comV)}
+        else if(sc==='obj'){va=a.obj;vb=b.obj}
+        else if(sc==='inst'){va=a.inst.filter(i=>i.paid).length;vb=b.inst.filter(i=>i.paid).length}
+        else{va=0;vb=0}
+        if(va<vb)return -sd;if(va>vb)return sd;return 0;
+      });
+
+      const toggleSort=(col)=>{
+        if(ctSort.col===col)sCtSort({col,dir:ctSort.dir==='asc'?'desc':'asc'});
+        else sCtSort({col,dir:'asc'});
+      };
+      const sortIcon=(col)=>ctSort.col===col?(ctSort.dir==='asc'?I.sortAsc:I.sortDesc):I.sortNone;
+
+      /* totals */
+      const totPr=fcts.reduce((a,c)=>a+c.pr,0);
+      const totKv=fcts.reduce((a,c)=>a+comC(c.comT,c.pr,c.comV),0);
+      const totFact=fcts.reduce((a,c)=>a+getActSt(c).fact,0);
+      const totInst=fcts.reduce((a,c)=>a+c.inst.length,0);
+      const totPaid=fcts.reduce((a,c)=>a+c.inst.filter(i=>i.paid).length,0);
+
+      const stLabel={ok:'Сверено',diff:'Расхождение',unk:'Не найден',none:'Не проверен'};
+      const stColor={ok:'var(--pri)',diff:'#c0392b',unk:'var(--acc-dk)',none:'var(--tx3)'};
+      const stBg={ok:'#e0f5ee',diff:'#fde8e8',unk:'#fff5d0',none:'var(--bg)'};
+      const stIc={ok:I.okCircle,diff:I.alertCircle,unk:I.minusCircle,none:I.minusCircle};
+
+      const thSt={padding:'10px 10px',textAlign:'left',fontWeight:700,color:'var(--tx2)',borderBottom:'2px solid var(--brd)',whiteSpace:'nowrap',cursor:'pointer',userSelect:'none',fontSize:11,textTransform:'uppercase',letterSpacing:'.04em'};
+
+      return<div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,flexWrap:'wrap',gap:10}}>
+          <h1 style={{fontSize:22}}>Договоры</h1>
+          <div style={{display:'flex',gap:6}}>
+            <Btn ghost onClick={()=>expCSV(cls,cts)} icon={I.dl}>Экспорт</Btn>
+            <Btn primary onClick={()=>{sECt(null);sCtCid(null);sMCtF(true)}} icon={I.plus}>Договор</Btn>
+          </div>
+        </div>
+
+        <div style={{display:'flex',gap:8,marginBottom:14,flexWrap:'wrap'}}>
+          <div style={{flex:1,minWidth:200,position:'relative'}}><span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)',display:'flex'}}>{I.search}</span><input value={ctQ} onChange={e=>sCtQ(e.target.value)} placeholder="Поиск по клиенту, номеру, СК, госномеру..." style={{paddingLeft:36}}/></div>
+          <select value={ctFltCo} onChange={e=>sCtFltCo(e.target.value)} style={{width:'auto',minWidth:110}}><option value="">Все СК</option>{cos.map(c=><option key={c}>{c}</option>)}</select>
+          <select value={ctFltTp} onChange={e=>sCtFltTp(e.target.value)} style={{width:'auto',minWidth:110}}><option value="">Все типы</option>{tps.map(t=><option key={t}>{t}</option>)}</select>
+          <select value={ctFltObj} onChange={e=>sCtFltObj(e.target.value)} style={{width:'auto',minWidth:130}}><option value="">Все объекты</option>{OT.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}</select>
+          <select value={ctFltSt} onChange={e=>sCtFltSt(e.target.value)} style={{width:'auto',minWidth:130}}><option value="">Все статусы сверки</option><option value="ok">Сверено</option><option value="diff">Расхождение</option><option value="none">Не проверен</option></select>
+          <select value={ctFltCtSt||''} onChange={e=>sCtFltCtSt(e.target.value)} style={{width:'auto',minWidth:130}}><option value="">Все статусы</option><option value="active">Действующий</option><option value="soon">Истекает скоро</option><option value="expired">Истёкший</option></select>
+          {(ctFltCo||ctFltTp||ctFltObj||ctFltSt||ctQ||ctFltCtSt)&&<Btn small danger onClick={()=>{sCtFltCo('');sCtFltTp('');sCtFltObj('');sCtFltSt('');sCtQ('');sCtFltCtSt('')}}>Сбросить</Btn>}
+        </div>
+
+        <Cd style={{padding:0,overflow:'auto'}}>
+          <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+            <thead><tr>
+              {[['client','Клиент'],['co','СК'],['tp','Тип'],['num','Номер'],['obj','Объект'],['s','Начало'],['e','Конец'],['ctst','Статус'],['pr','Премия'],['kv','КВ ожид.'],['fact','КВ факт'],['inst','Взносы'],['status','Сверка']].map(([col,label])=>(
+                <th key={col} onClick={()=>col!=='fact'&&col!=='status'&&toggleSort(col)} style={{...thSt,cursor:(col==='fact'||col==='status')?'default':'pointer'}}>
+                  <span style={{display:'inline-flex',alignItems:'center',gap:3}}>{label} {col!=='fact'&&col!=='status'&&sortIcon(col)}</span>
+                </th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {fcts.map(ct=>{
+                const cl=cls.find(c=>c.id===ct.cid);
+                const as=getActSt(ct);
+                const kvExp=comC(ct.comT,ct.pr,ct.comV);
+                const paidCnt=ct.inst.filter(i=>i.paid).length;
+                return<tr key={ct.id} style={{borderBottom:'1px solid var(--brd-lt)',transition:'background .1s',cursor:'pointer'}}
+                  onClick={()=>{if(cl){sSel(cl);sPg('card')}}}
+                  onMouseEnter={e=>e.currentTarget.style.background='var(--bg)'}
+                  onMouseLeave={e=>e.currentTarget.style.background=''}>
+                  <td style={{padding:'10px 10px',fontWeight:700,maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{cl?cl.n:'—'}</td>
+                  <td style={{padding:'10px 10px'}}><Tag text={ct.co}/></td>
+                  <td style={{padding:'10px 10px'}}>{ct.tp}</td>
+                  <td style={{padding:'10px 10px',fontFamily:'monospace',fontSize:11}}>{ct.num}</td>
+                  <td style={{padding:'10px 10px',color:'var(--sec)',display:'flex',alignItems:'center',gap:3}}>{objIc(ct.obj)} <span style={{color:'var(--tx)'}}>{ct.obj==='auto'?(ct.od.car||'—'):ct.obj==='realty'?(ct.od.rtype||'—'):'Жизнь'}</span></td>
+                  <td style={{padding:'10px 10px',fontFamily:'monospace'}}>{fD(ct.s)}</td>
+                  <td style={{padding:'10px 10px',fontFamily:'monospace'}}>{fD(ct.e)}</td>
+                  {(()=>{const s=ctStatus(ct);return<td style={{padding:'10px 10px'}}><span style={{padding:'2px 8px',borderRadius:5,fontSize:10,fontWeight:700,background:s.bg,color:s.color}}>{s.label}</span></td>})()}
+                  <td style={{padding:'10px 10px',fontWeight:900,color:'var(--acc-dk)',fontFamily:'monospace'}}>{fM(ct.pr)}</td>
+                  <td style={{padding:'10px 10px',fontWeight:700,color:'var(--pri)',fontFamily:'monospace'}}>{fM(kvExp)}</td>
+                  <td style={{padding:'10px 10px',fontFamily:'monospace',color:as.fact?'var(--pri)':'var(--tx3)'}}>{as.fact?fM(as.fact):'—'}</td>
+                  <td style={{padding:'10px 10px'}}>{ct.inst.length>0?<span style={{fontWeight:600}}>{paidCnt}/{ct.inst.length}</span>:'—'}</td>
+                  <td style={{padding:'10px 10px'}}><span style={{display:'inline-flex',alignItems:'center',gap:4,padding:'2px 8px',borderRadius:5,fontSize:11,fontWeight:600,background:stBg[as.st],color:stColor[as.st]}}>{stIc[as.st]} {stLabel[as.st]}</span></td>
+                </tr>
+              })}
+            </tbody>
+            <tfoot>
+              <tr style={{borderTop:'2px solid var(--brd)',background:'var(--bg)'}}>
+                <td style={{padding:'12px 10px',fontWeight:900,fontSize:13}} colSpan={2}>Итого: {fcts.length} договоров</td>
+                <td colSpan={6}></td>
+                <td style={{padding:'12px 10px',fontWeight:900,color:'var(--acc-dk)',fontFamily:'monospace',fontSize:13}}>{fM(totPr)}</td>
+                <td style={{padding:'12px 10px',fontWeight:900,color:'var(--pri)',fontFamily:'monospace',fontSize:13}}>{fM(totKv)}</td>
+                <td style={{padding:'12px 10px',fontWeight:700,color:'var(--pri)',fontFamily:'monospace',fontSize:12}}>{totFact?fM(totFact):'—'}</td>
+                <td style={{padding:'12px 10px',fontWeight:700,fontSize:12}}>{totPaid}/{totInst}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </Cd>
+        <div style={{padding:10,color:'var(--tx3)',fontSize:12}}>Показано {fcts.length} из {cts.length} договоров</div>
+      </div>})()}
+
+    {pg==='tsk'&&<div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}><h1 style={{fontSize:22}}>Задачи</h1><Btn primary onClick={()=>{sETk(null);sMTF(true)}} icon={I.plus}>Новая</Btn></div>
+      <div style={{display:'flex',gap:6,marginBottom:16}}>
+        {[['','Все'],['act','Активные'],['dn','Завершённые']].map(([k,l])=><Tag key={k} text={l} bg={tkFlt===k?'var(--pri)':'rgba(60,168,168,.1)'} color={tkFlt===k?'#fff':'var(--pri)'} onClick={()=>sTkFlt(k)} style={{padding:'7px 14px',fontSize:12,cursor:'pointer'}}/>)}
+      </div>
+      {tks.filter(t=>tkFlt==='act'?!t.dn:tkFlt==='dn'?t.dn:true).sort((a,b)=>a.dn!==b.dn?a.dn?1:-1:new Date(a.d)-new Date(b.d)).map(t=>{const c=cls.find(x=>x.id===t.cid);
+        return<Cd key={t.id} style={{display:'flex',alignItems:'center',gap:12,marginBottom:8,padding:14}}>
+          <div onClick={()=>tog(t.id)} style={{width:24,height:24,borderRadius:6,border:t.dn?'none':'2px solid var(--brd)',background:t.dn?'var(--pri)':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#fff',flexShrink:0}}>{t.dn&&I.check}</div>
+          <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,textDecoration:t.dn?'line-through':'none',color:t.dn?'var(--tx3)':'var(--tx)'}}>{t.t}</div><div style={{fontSize:12,color:'var(--tx3)'}}>{c&&c.n} — {fD(t.d)}</div></div>
+          <Tag text={pN(t.p)} bg={pB(t.p)} color={pC(t.p)}/>
+          <button onClick={()=>{sETk(t);sMTF(true)}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',display:'flex'}}>{I.edit}</button>
+          <button onClick={()=>sConf({tp:'tk',id:t.id,nm:t.t})} style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',display:'flex'}}>{I.trash}</button>
+        </Cd>})}
+    </div>}
+
+    {pg==='cal'&&<Cal tasks={tks} cls={cls} cts={cts}/>}
+    {pg==='acts'&&<Acts acts={acts} setActs={sActs} cts={cts} cls={cls} show={show}/>}
+    </div>
+
+    {mCF&&<ClForm ini={eCl} onClose={()=>{sMCF(false);sECl(null)}} onSave={savCl}/>}
+    {mCtF&&<CtForm ini={eCt} cid={ctCid||sel?.id} clients={cls} onClose={()=>{sMCtF(false);sECt(null);sCtCid(null)}} onSave={savCt} onNewClient={()=>sQuickNewCl(true)}/>}
+    {quickNewCl&&<ClForm ini={null} onClose={()=>sQuickNewCl(false)} onSave={(c)=>{sCl([...cls,c]);sQuickNewCl(false);show('Клиент добавлен')}}/>}
+    {mTF&&<TkForm ini={eTk} cls={cls} onClose={()=>{sMTF(false);sETk(null)}} onSave={savTk}/>}
+    {conf&&<Confirm msg={`Удалить «${conf.nm}»?`} onNo={()=>sConf(null)} onYes={()=>{
+      if(conf.tp==='cl'){sCl(cls.filter(x=>x.id!==conf.id));sCt(cts.filter(x=>x.cid!==conf.id));sTk(tks.filter(x=>x.cid!==conf.id));if(sel?.id===conf.id){sSel(null);sPg('cli')}show('Удалено')}
+      else if(conf.tp==='ct'){sCt(cts.filter(x=>x.id!==conf.id));show('Договор удалён')}
+      else{sTk(tks.filter(x=>x.id!==conf.id));show('Задача удалена')}sConf(null)}}/>}
+    {toast&&<Toast msg={toast} onDone={()=>sToast(null)}/>}
+  </div>;
+}
+
+/* ═══ Landing ═══ */
+function Landing({onL,onR}){
+  return<div style={{background:'var(--bg)'}}>
+    <nav style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 28px',borderBottom:'1px solid var(--brd)',position:'sticky',top:0,background:'rgba(236,227,228,.95)',zIndex:100,backdropFilter:'blur(12px)'}}>
+      <div style={{color:'var(--pri)'}}><VPLogo/></div>
+      <div style={{display:'flex',gap:8}}><Btn ghost onClick={onL}>Войти</Btn><Btn primary onClick={onR}>Попробовать</Btn></div>
+    </nav>
+    <section style={{padding:'80px 24px 60px',textAlign:'center',position:'relative'}}>
+      <div style={{position:'absolute',top:40,right:60,width:80,height:80,border:'2px solid var(--sec)',transform:'rotate(45deg)',borderRadius:4,opacity:.15}}/>
+      <div style={{position:'absolute',bottom:30,left:40,width:50,height:50,background:'var(--acc)',transform:'rotate(45deg)',borderRadius:3,opacity:.12}}/>
+      <div style={{position:'relative',zIndex:1,maxWidth:700,margin:'0 auto'}}>
+        <div className="fi" style={{display:'inline-block',padding:'6px 16px',borderRadius:20,background:'rgba(60,168,168,.1)',color:'var(--pri)',fontSize:12,fontWeight:700,marginBottom:20,border:'1px solid rgba(60,168,168,.2)',letterSpacing:'.04em'}}>ДЛЯ СТРАХОВЫХ АГЕНТОВ</div>
+        <h1 className="fi" style={{fontSize:42,lineHeight:1.15,marginBottom:18,color:'var(--pri)'}}>Договоры, комиссии и сверка<br/><span style={{color:'var(--sec)'}}>в одном месте</span></h1>
+        <p className="fi" style={{fontSize:16,color:'var(--tx2)',lineHeight:1.7,maxWidth:520,margin:'0 auto 32px'}}>Взносы с напоминаниями, автосверка актов от СК, умный календарь. Уверенно, профессионально, надёжно.</p>
+        <div className="fi" style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}>
+          <Btn primary onClick={onR} style={{padding:'14px 32px',fontSize:15,borderRadius:10}}>Начать бесплатно</Btn>
+          <Btn accent onClick={onL} style={{padding:'14px 32px',fontSize:15,borderRadius:10,fontWeight:900}}>Демо-доступ</Btn>
+        </div>
+        <Sep/>
+      </div>
+    </section>
+    <section style={{padding:'60px 24px',background:'#fff',borderTop:'1px solid var(--brd-lt)'}}>
+      <div style={{maxWidth:950,margin:'0 auto'}}>
+        <h2 style={{textAlign:'center',fontSize:28,marginBottom:8,color:'var(--pri)'}}>Возможности</h2>
+        <div style={{display:'flex',justifyContent:'center',marginBottom:32}}><div style={{width:8,height:8,background:'var(--sec)',transform:'rotate(45deg)',borderRadius:1}}/></div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:14}}>
+          {[[I.users,'Карточки клиентов','Контакты, дни рождения, история договоров'],[I.doc,'Несколько договоров','У каждого клиента — свой список полисов'],[I.coin,'Взносы и комиссии','До 4 взносов, автоматический расчёт КВ'],[I.cal,'Умный календарь','Взносы, окончания, дни рождения'],[I.clip,'Автосверка актов','Загрузка Excel от СК и сопоставление'],[I.car,'Типы объектов','Авто, недвижимость, жизнь — разные поля']].map(([ic,ti,de],i)=>(
+            <Cd key={i} style={{padding:24}}><div style={{color:'var(--sec)',marginBottom:10}}>{ic}</div><h3 style={{fontSize:15,color:'var(--pri)',marginBottom:4}}>{ti}</h3><p style={{color:'var(--tx2)',fontSize:13,margin:0,lineHeight:1.6}}>{de}</p></Cd>))}
+        </div>
+      </div>
+    </section>
+    <footer style={{padding:28,textAlign:'center',borderTop:'1px solid var(--brd)',color:'var(--tx3)',fontSize:12}}>
+      <div style={{display:'flex',justifyContent:'center',marginBottom:8}}><div style={{width:6,height:6,background:'var(--sec)',transform:'rotate(45deg)',borderRadius:1}}/></div>
+      2026 АгентСфера — Уверенно, профессионально, надёжно
+    </footer>
+  </div>;
+}
+
+/* ═══ Auth ═══ */
+function Auth({mode,onSw,onOk,onBk}){const il=mode==='login';
+  const[name,sName]=useState('');const[email,sEmail]=useState('');
+  return<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg)'}}>
+    <div style={{width:'100%',maxWidth:400,padding:24}}>
+      <button onClick={onBk} style={{background:'none',border:'none',color:'var(--tx2)',cursor:'pointer',fontSize:14,marginBottom:20,fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>{I.chL} Назад</button>
+      <div className="su" style={{background:'#fff',borderRadius:16,padding:32,border:'1px solid var(--brd-lt)',boxShadow:'var(--sh-lg)'}}>
+        <div style={{color:'var(--pri)',marginBottom:26}}><VPLogo/></div>
+        <h2 style={{fontSize:22,marginBottom:20,color:'var(--pri)'}}>{il?'Вход':'Регистрация'}</h2>
+        {!il&&<div style={{marginBottom:12}}><input value={name} onChange={e=>sName(e.target.value)} placeholder="Ваше имя *"/></div>}
+        <div style={{marginBottom:12}}><input value={email} onChange={e=>sEmail(e.target.value)} placeholder="Email"/></div>
+        <div style={{marginBottom:18}}><input type="password" placeholder="Пароль"/></div>
+        <button onClick={()=>onOk(il?(email.split('@')[0]||'Агент'):name||'Агент')} style={{width:'100%',padding:12,border:'none',borderRadius:10,background:'var(--pri)',color:'#fff',cursor:'pointer',fontWeight:700,marginBottom:16,fontFamily:'inherit',fontSize:14}}>{il?'Войти':'Создать'}</button>
+        <p style={{textAlign:'center',fontSize:12,color:'var(--tx3)'}}>{il?'Нет аккаунта? ':'Есть? '}<span onClick={onSw} style={{color:'var(--sec)',cursor:'pointer',fontWeight:700}}>{il?'Регистрация':'Войти'}</span></p>
+      </div>
+    </div>
+  </div>;
+}
+
+function App(){const[scr,sScr]=useState('land');const[am,sAm]=useState('login');const[userName,sUserName]=useState('');
+  if(scr==='land')return<Landing onL={()=>{sAm('login');sScr('auth')}} onR={()=>{sAm('reg');sScr('auth')}}/>;
+  if(scr==='auth')return<Auth mode={am} onSw={()=>sAm(am==='login'?'reg':'login')} onOk={(n)=>{sUserName(n);sScr('crm')}} onBk={()=>sScr('land')}/>;
+  return<Crm onOut={()=>sScr('land')} userName={userName}/>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
