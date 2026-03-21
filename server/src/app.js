@@ -12,6 +12,7 @@ const connectDB = require('./config/db');
 // Роуты
 const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/clients');
+const { clientNotesRouter, notesRouter } = require('./routes/notes');
 
 const app = express();
 
@@ -49,6 +50,8 @@ const authLimiter = rateLimit({
 
 app.use('/api/v1/auth', authLimiter, authRoutes);
 app.use('/api/v1/clients', clientRoutes);
+app.use('/api/v1/clients/:clientId/notes', clientNotesRouter);
+app.use('/api/v1/notes', notesRouter);
 
 // --- Заглушки (будут заменены) ---
 
@@ -58,10 +61,6 @@ app.use('/api/v1/contracts', (req, res) => {
 
 app.use('/api/v1/tasks', (req, res) => {
   res.json({ success: true, data: 'tasks route — заглушка' });
-});
-
-app.use('/api/v1/notes', (req, res) => {
-  res.json({ success: true, data: 'notes route — заглушка' });
 });
 
 app.use('/api/v1/acts', (req, res) => {
