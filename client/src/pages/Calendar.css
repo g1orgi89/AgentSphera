@@ -1,0 +1,375 @@
+/* === Календарь === */
+
+.cal-page {
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.cal-header {
+  margin-bottom: 20px;
+}
+
+.cal-header h1 {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  color: var(--pri);
+}
+
+/* Сводка месяца */
+
+.cal-summary {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.cal-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.cal-summary-diamond {
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.cal-ev-task .cal-summary-diamond,
+.cal-ev-task .cal-detail-diamond { background: var(--pri); }
+.cal-ev-expiry .cal-summary-diamond,
+.cal-ev-expiry .cal-detail-diamond { background: var(--danger); }
+.cal-ev-installment .cal-summary-diamond,
+.cal-ev-installment .cal-detail-diamond { background: var(--warning); }
+.cal-ev-birthday .cal-summary-diamond,
+.cal-ev-birthday .cal-detail-diamond { background: var(--sec); }
+
+/* Навигация */
+
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cal-nav-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  transition: all 0.2s;
+}
+
+.cal-nav-btn:hover {
+  border-color: var(--sec);
+  color: var(--sec);
+}
+
+.cal-nav-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.cal-nav-month {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--text);
+}
+
+.cal-nav-year {
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+.cal-today-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-light);
+  transition: all 0.2s;
+}
+
+.cal-today-btn:hover {
+  border-color: var(--sec);
+  color: var(--sec);
+}
+
+/* Загрузка */
+
+.cal-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-light);
+}
+
+/* Сетка */
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.cal-weekday {
+  background: var(--pri);
+  color: #fff;
+  text-align: center;
+  padding: 8px 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cal-cell {
+  background: var(--card);
+  min-height: 72px;
+  padding: 6px;
+  position: relative;
+}
+
+.cal-cell-active {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.cal-cell-active:hover {
+  background: var(--bg);
+}
+
+.cal-cell-today {
+  background: rgba(60, 168, 168, 0.06);
+}
+
+.cal-cell-today .cal-day-num {
+  background: var(--sec);
+  color: #fff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cal-cell-selected {
+  background: rgba(1, 87, 92, 0.08);
+  box-shadow: inset 0 0 0 2px var(--pri);
+}
+
+.cal-day-num {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text);
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+/* Ромбовые маркеры */
+
+.cal-dots {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.cal-diamond {
+  width: 6px;
+  height: 6px;
+  transform: rotate(45deg);
+  border-radius: 1px;
+}
+
+.cal-diamond.cal-ev-task { background: var(--pri); }
+.cal-diamond.cal-ev-expiry { background: var(--danger); }
+.cal-diamond.cal-ev-installment { background: var(--warning); }
+.cal-diamond.cal-ev-birthday { background: var(--sec); }
+
+/* === Детали дня === */
+
+.cal-details {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.cal-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.cal-details-header h3 {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  color: var(--pri);
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.cal-details-close {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  padding: 4px;
+  display: flex;
+  cursor: pointer;
+}
+
+.cal-details-close:hover {
+  color: var(--text);
+}
+
+.cal-details-empty {
+  color: var(--text-light);
+  font-size: 0.85rem;
+}
+
+.cal-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cal-detail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s;
+}
+
+.cal-detail-item:hover {
+  border-color: var(--sec);
+}
+
+.cal-detail-diamond {
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  border-radius: 1px;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.cal-detail-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.cal-detail-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cal-detail-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.cal-detail-badge.cal-ev-task { background: rgba(1, 87, 92, 0.1); color: var(--pri); }
+.cal-detail-badge.cal-ev-expiry { background: #fef2f2; color: var(--danger); }
+.cal-detail-badge.cal-ev-installment { background: #fef9e7; color: #92400e; }
+.cal-detail-badge.cal-ev-birthday { background: rgba(60, 168, 168, 0.1); color: var(--sec); }
+
+.cal-detail-title {
+  font-size: 0.85rem;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.cal-detail-done {
+  text-decoration: line-through;
+  color: var(--text-light);
+}
+
+.cal-detail-client {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--sec);
+  cursor: pointer;
+  margin-top: 4px;
+  transition: color 0.2s;
+}
+
+.cal-detail-client:hover {
+  color: var(--pri);
+}
+
+.cal-detail-extra {
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.cal-detail-paid { color: var(--success); }
+.cal-detail-unpaid { color: var(--danger); }
+
+.cal-detail-pri-h { color: var(--danger); }
+.cal-detail-pri-m { color: #92400e; }
+.cal-detail-pri-l { color: #166534; }
+
+.cal-detail-number {
+  font-size: 0.7rem;
+  color: var(--text-light);
+  margin-top: 2px;
+  display: block;
+}
+
+/* Адаптив */
+
+@media (max-width: 640px) {
+  .cal-cell {
+    min-height: 52px;
+    padding: 4px;
+  }
+
+  .cal-day-num {
+    font-size: 0.7rem;
+  }
+
+  .cal-summary {
+    gap: 10px;
+  }
+
+  .cal-diamond {
+    width: 5px;
+    height: 5px;
+  }
+}
