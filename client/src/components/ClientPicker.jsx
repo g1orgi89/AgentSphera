@@ -3,7 +3,8 @@ import api from '../services/api';
 
 function ClientPicker({ value, onChange }) {
   const [search, setSearch] = useState('');
-  const [results, setResults] = useState([]);
+  const [allClients, setAllClients] = useState([]);
+  const [filtered, setFiltered] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(value || null);
@@ -20,29 +21,39 @@ function ClientPicker({ value, onChange }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Поиск клиентов с дебаунсом
+  // Загрузить всех клиентов при монтировании
   useEffect(() => {
-    if (!search.trim()) {
-      setResults([]);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
+    const loadClients = async () => {
       setLoading(true);
       try {
         const res = await api.get('/clients', {
-          params: { search: search.trim(), limit: 10 }
+          params: { limit: 200, sort: 'name' }
         });
-        setResults(res.data.data);
+        setAllClients(res.data.data || []);
       } catch {
-        setResults([]);
+        setAllClients([]);
       } finally {
         setLoading(false);
       }
-    }, 300);
+    };
+    loadClients();
+  }, []);
 
-    return () => clearTimeout(timer);
-  }, [search]);
+  // Фильтрация по вводу
+  useEffect(() => {
+    if (!search.trim()) {
+      setFiltered(allClients);
+    } else {
+      const s = search.trim().toLowerCase();
+      setFiltered(
+        allClients.filter(c =>
+          c.name.toLowerCase().includes(s) ||
+          (c.phone && c.phone.includes(s)) ||
+          (c.email && c.email.toLowerCase().includes(s))
+        )
+      );
+    }
+  }, [search, allClients]);
 
   const handleSelect = (client) => {
     setSelected(client);
@@ -75,25 +86,25 @@ function ClientPicker({ value, onChange }) {
       <input
         type="text"
         className="client-picker-input"
-        placeholder="Поиск клиента..."
+        placeholder="Выберите клиента или начните ввод..."
         value={search}
         onChange={(e) => {
           setSearch(e.target.value);
           setShowDropdown(true);
         }}
-        onFocus={() => {
-          if (search.trim()) setShowDropdown(true);
-        }}
+        onFocus={() => setShowDropdown(true)}
       />
 
-      {showDropdown && search.trim() && (
+      {showDropdown && (
         <div className="client-picker-dropdown">
           {loading ? (
-            <div className="client-picker-empty">Поиск...</div>
-          ) : results.length === 0 ? (
-            <div className="client-picker-empty">Не найдено</div>
+            <div className="client-picker-empty">Загрузка...</div>
+          ) : filtered.length === 0 ? (
+            <div className="client-picker-empty">
+              {search.trim() ? 'Не найдено' : 'Нет клиентов'}
+            </div>
           ) : (
-            results.map(client => (
+            filtered.map(client => (
               <div
                 key={client._id}
                 className="client-picker-option"
