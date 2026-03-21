@@ -459,14 +459,83 @@ a.cd-contact:hover {
   transition: background 0.2s;
 }
 
-.cd-notes-add-btn:hover {
+.cd-notes-add-btn:hover:not(:disabled) {
   background: var(--sec);
+}
+
+.cd-notes-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .cd-notes-empty {
   color: var(--text-light);
   font-size: 0.8rem;
   padding: 4px 0;
+}
+
+/* Список заметок */
+
+.cd-notes-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.cd-note-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cd-note-item:last-child {
+  border-bottom: none;
+}
+
+.cd-note-diamond {
+  width: 6px;
+  height: 6px;
+  background: var(--sec);
+  transform: rotate(45deg);
+  border-radius: 1px;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.cd-note-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.cd-note-text {
+  font-size: 0.8rem;
+  color: var(--text);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.cd-note-date {
+  font-size: 0.7rem;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+
+.cd-note-delete {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: all 0.2s;
+}
+
+.cd-note-delete:hover {
+  color: var(--danger);
+  opacity: 1;
 }
 
 /* Адаптив */
