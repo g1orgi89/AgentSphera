@@ -22,10 +22,10 @@
 ## ТЕКУЩИЙ СТАТУС
 
 **Фаза:** 3 (договоры) — в процессе
-**Последняя задача:** 3.2 (API договоров) — ГОТОВО
-**Следующая задача:** 3.3 (Форма договора — фронтенд)
+**Последняя задача:** 3.3 (Форма договора — фронтенд) — ГОТОВО
+**Следующая задача:** 3.4 (Договоры в карточке клиента)
 **Блокеры:** нет
-**Тестирование:** API клиентов (2.2) протестировано вручную. Фронтенд (2.3, 2.4) протестирован в браузере. API договоров (3.2) — ожидает ручного тестирования.
+**Тестирование:** API договоров (3.2) протестировано вручную (все 7 эндпоинтов ОК). ContractForm (3.3) — ожидает тестирования в браузере.
 
 ---
 
@@ -47,7 +47,8 @@
 - [x] 2.5 — Модель Note + API: Note.js, routes/notes.js (GET/POST /clients/:id/notes, DELETE /notes/:id), подключение в app.js
 - [x] 2.6 — Заметки в карточке клиента: поле ввода + кнопка «Добавить» (Enter), список заметок с датами и ромб-маркерами, удаление заметки, реальные API-вызовы
 - [x] 3.1 — Модель Contract: схема с installmentSchema, виртуальные поля commissionAmount и status, валидация endDate >= startDate, индексы
-- [x] 3.2 — API договоров: contractService.js + routes/contracts.js (CRUD, поиск по номеру/СК/типу/клиенту, фильтры по status/company/type/objectType, PATCH взносов, totals), подключение в app.js
+- [x] 3.2 — API договоров: contractService.js + routes/contracts.js (CRUD, поиск, фильтры, PATCH взносов, totals), подключение в app.js
+- [x] 3.3 — Форма договора: ContractForm.jsx + ContractForm.css (3 шага, Combo для СК/типа, ClientPicker + «Новый клиент», до 4 взносов, objectType авто/недвижимость/жизнь, сводка с расчётом КВ)
 
 **Прототип:** завершён, согласован.
 
@@ -55,7 +56,7 @@
 
 ## ПРОШЛАЯ СЕССИЯ
 
-_21.03.2026 — Задача 3.2 (API договоров). Создан contractService.js: getContracts (поиск по company/number/type/имени клиента, фильтры по objectType/status через даты, сортировка, пагинация, populate clientId), getContractById, createContract (проверка существования клиента), updateContract (whitelist полей, проверка clientId при смене), deleteContract, updateInstallment (PATCH взноса по индексу — paid/paidDate/amount/dueDate), getTotals (суммы с учётом фильтров). Создан routes/contracts.js: 7 эндпоинтов (GET /, GET /totals, GET /:id, POST /, PUT /:id, DELETE /:id, PATCH /:id/installments/:idx). Обновлён app.js: заглушка contracts заменена на реальный роутер. Фильтр по actStatus не реализован — зависит от модели Act (фаза 5). Далее: 3.3 (форма договора фронтенд)._
+_21.03.2026 — Задачи 3.2 и 3.3. API договоров протестировано вручную (POST, GET, PUT, PATCH installments, totals, DELETE — всё ОК). Создан ContractForm.jsx: 3 шага (договор+взносы → объект → сводка), Combo-компонент с подсказками из существующих договоров (СК, тип), ClientPicker с кнопкой «+ Новый» (открывает ClientForm), до 4 взносов с суммой/датой/статусом, objectType с условными полями (авто: car/plate/vin, недвижимость: realtyType/address/area, жизнь: insured/age/sumInsured), сводка с расчётом комиссии. CSS: отдельный ContractForm.css. Пропсы: contract (для редактирования), clientId (если из карточки клиента), onSubmit, onClose. Далее: 3.4 (договоры в карточке клиента)._
 
 ---
 
@@ -73,6 +74,8 @@ _21.03.2026 — Задача 3.2 (API договоров). Создан contract
 | 21.03.2026 | /contracts/totals до /:id в роутере | Иначе Express трактует "totals" как :id |
 | 21.03.2026 | Фильтр status через date-запросы (не JS-фильтрация) | Виртуальные поля не индексируются, фильтрация через $gte/$lte на endDate эффективнее |
 | 21.03.2026 | actStatus фильтр отложен до фазы 5 | Зависит от модели Act которая создаётся в 5.1 |
+| 21.03.2026 | Combo: подсказки из GET /contracts (unique company/type) | Простая реализация без отдельного эндпоинта |
+| 21.03.2026 | ContractForm.css отдельным файлом | Форма большая, не загромождать Clients.css |
 
 ---
 
