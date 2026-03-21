@@ -7,7 +7,7 @@ const PRIORITY_OPTIONS = [
   { value: 'l', label: 'Низкий' }
 ];
 
-function TaskForm({ task, onSubmit, onClose }) {
+function TaskForm({ task, fixedClient, onSubmit, onClose }) {
   const [form, setForm] = useState({
     title: '',
     dueDate: '',
@@ -29,8 +29,11 @@ function TaskForm({ task, onSubmit, onClose }) {
       if (task.clientId && typeof task.clientId === 'object') {
         setSelectedClient(task.clientId);
       }
+    } else if (fixedClient) {
+      setForm(prev => ({ ...prev, clientId: fixedClient._id }));
+      setSelectedClient(fixedClient);
     }
-  }, [task]);
+  }, [task, fixedClient]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -122,10 +125,16 @@ function TaskForm({ task, onSubmit, onClose }) {
 
           <div className="task-form-field">
             <label>Клиент</label>
-            <ClientPicker
-              value={selectedClient}
-              onChange={handleClientChange}
-            />
+            {fixedClient ? (
+              <div className="client-picker-selected">
+                <span>{fixedClient.name}</span>
+              </div>
+            ) : (
+              <ClientPicker
+                value={selectedClient}
+                onChange={handleClientChange}
+              />
+            )}
           </div>
 
           {error && <div className="task-form-error">{error}</div>}
