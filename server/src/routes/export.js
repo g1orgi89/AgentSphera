@@ -10,10 +10,13 @@ router.use(protect);
 // GET /api/v1/export/xlsx — экспорт договоров в Excel
 router.get('/xlsx', async (req, res) => {
   try {
-    const contracts = await Contract.find({ userId: req.user._id })
+    // Без lean() — чтобы виртуальные поля (status, commissionAmount) работали
+    const contractDocs = await Contract.find({ userId: req.user._id })
       .populate('clientId', 'name phone email')
-      .sort({ createdAt: -1 })
-      .lean({ virtuals: true });
+      .sort({ createdAt: -1 });
+
+    // Конвертируем в plain objects с виртуальными полями
+    const contracts = contractDocs.map(doc => doc.toJSON());
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'АгентСфера';
@@ -30,28 +33,45 @@ router.get('/xlsx', async (req, res) => {
       { header: 'Тип', key: 'type', width: 16 },
       { header: '№ договора', key: 'number', width: 18 },
       { header: 'Объект', key: 'objectType', width: 14 },
-      { header: 'Дата начала', key: 'startDate', width: 14 },
-      { header: 'Дата окончания', key: 'endDate', width: 14 },
-      { header: 'Статус', key: 'status', width: 16 },
-      { header: 'Премия', key: 'premium', width: 14 },
+      { header: 'Дата начала', key: 'startDate', width: 16 },
+      { header: 'Дата окончания', key: 'endDate', width: 16 },
+      { header: 'Статус', key: 'status', width: 18 },
+      { header: 'Премия', key: 'premium', width: 16 },
       { header: 'КВ тип', key: 'commissionType', width: 10 },
       { header: 'КВ значение', key: 'commissionValue', width: 14 },
       { header: 'КВ сумма', key: 'commissionAmount', width: 14 },
-      { header: 'Взносы (оплачено/всего)', key: 'installments', width: 24 },
+      { header: 'Взносы', key: 'installments', width: 14 },
       { header: 'Заметка', key: 'note', width: 30 }
     ];
 
+    // --- Стиль границ ---
+    const thinBorder = {
+      top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+      left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+      bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+      right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
+    };
+
+    const headerBorder = {
+      top: { style: 'thin', color: { argb: 'FF01575C' } },
+      left: { style: 'thin', color: { argb: 'FF01575C' } },
+      bottom: { style: 'medium', color: { argb: 'FF01575C' } },
+      right: { style: 'thin', color: { argb: 'FF01575C' } }
+    };
+
     // --- Стили шапки ---
     const headerRow = sheet.getRow(1);
-    headerRow.font = { bold: true, size: 11 };
-    headerRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF01575C' }
-    };
-    headerRow.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
-    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
-    headerRow.height = 28;
+    headerRow.height = 30;
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF01575C' }
+      };
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      cell.border = headerBorder;
+    });
 
     // --- Маппинг данных ---
     const STATUS_LABELS = {
@@ -68,19 +88,11 @@ router.get('/xlsx', async (req, res) => {
       life: 'Жизнь'
     };
 
-    const formatDate = (date) => {
-      if (!date) return '';
-      const d = new Date(date);
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = d.getFullYear();
-      return `${day}.${month}.${year}`;
-    };
-
     contracts.forEach((contract) => {
-      const clientName = contract.clientId ? contract.clientId.name : '—';
-      const clientPhone = contract.clientId ? (contract.clientId.phone || '') : '';
-      const clientEmail = contract.clientId ? (contract.clientId.email || '') : '';
+      const client = contract.clientId || {};
+      const clientName = client.name || '—';
+      const clientPhone = client.phone || '';
+      const clientEmail = client.email || '';
 
       const paidCount = (contract.installments || []).filter(i => i.paid).length;
       const totalCount = (contract.installments || []).length;
@@ -94,8 +106,8 @@ router.get('/xlsx', async (req, res) => {
         type: contract.type || '',
         number: contract.number || '',
         objectType: OBJECT_LABELS[contract.objectType] || '',
-        startDate: formatDate(contract.startDate),
-        endDate: formatDate(contract.endDate),
+        startDate: contract.startDate ? new Date(contract.startDate) : null,
+        endDate: contract.endDate ? new Date(contract.endDate) : null,
         status: STATUS_LABELS[contract.status] || contract.status || '',
         premium: contract.premium || 0,
         commissionType: contract.commissionType === '%' ? '%' : 'Фикс.',
@@ -107,24 +119,87 @@ router.get('/xlsx', async (req, res) => {
     });
 
     // --- Стили данных ---
-    for (let i = 2; i <= contracts.length + 1; i++) {
+    const dataRowCount = contracts.length;
+    for (let i = 2; i <= dataRowCount + 1; i++) {
       const row = sheet.getRow(i);
       row.alignment = { vertical: 'middle', wrapText: true };
+      row.height = 22;
 
       // Чередование цвета строк
       if (i % 2 === 0) {
-        row.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFF5F0F0' }
-        };
+        row.eachCell({ includeEmpty: true }, (cell) => {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF5F0F0' }
+          };
+        });
       }
+
+      // Границы для каждой ячейки
+      row.eachCell({ includeEmpty: true }, (cell) => {
+        cell.border = thinBorder;
+      });
     }
 
-    // Числовой формат для премии и КВ
+    // Формат дат
+    sheet.getColumn('startDate').numFmt = 'DD.MM.YYYY';
+    sheet.getColumn('endDate').numFmt = 'DD.MM.YYYY';
+
+    // Числовой формат для сумм
     sheet.getColumn('premium').numFmt = '#,##0';
     sheet.getColumn('commissionValue').numFmt = '#,##0';
     sheet.getColumn('commissionAmount').numFmt = '#,##0';
+
+    // --- Строка ИТОГО ---
+    if (dataRowCount > 0) {
+      const totalRowIdx = dataRowCount + 2;
+      const lastDataRow = dataRowCount + 1;
+
+      const totalRow = sheet.getRow(totalRowIdx);
+      totalRow.height = 28;
+
+      // Ячейка A — надпись «Итого»
+      const cellA = totalRow.getCell('A');
+      cellA.value = `ИТОГО (${dataRowCount})`;
+      cellA.font = { bold: true, size: 11, color: { argb: 'FF01575C' } };
+      cellA.alignment = { vertical: 'middle' };
+
+      // Премия — SUM формула
+      const cellK = totalRow.getCell('K');
+      cellK.value = { formula: `SUM(K2:K${lastDataRow})` };
+      cellK.numFmt = '#,##0';
+      cellK.font = { bold: true, size: 11 };
+
+      // КВ сумма — SUM формула
+      const cellN = totalRow.getCell('N');
+      cellN.value = { formula: `SUM(N2:N${lastDataRow})` };
+      cellN.numFmt = '#,##0';
+      cellN.font = { bold: true, size: 11, color: { argb: 'FF3CA8A8' } };
+
+      // КВ значение — SUM формула
+      const cellM = totalRow.getCell('M');
+      cellM.value = { formula: `SUM(M2:M${lastDataRow})` };
+      cellM.numFmt = '#,##0';
+      cellM.font = { bold: true, size: 11 };
+
+      // Стиль строки итого — верхняя граница толстая
+      const totalBorder = {
+        top: { style: 'medium', color: { argb: 'FF01575C' } },
+        left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        bottom: { style: 'medium', color: { argb: 'FF01575C' } },
+        right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
+      };
+
+      totalRow.eachCell({ includeEmpty: true }, (cell) => {
+        cell.border = totalBorder;
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFECE3E4' }
+        };
+      });
+    }
 
     // Автофильтр
     sheet.autoFilter = {
