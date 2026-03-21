@@ -1,0 +1,551 @@
+/* === Страница клиентов === */
+
+.clients-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.clients-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.clients-header h1 {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  color: var(--pri);
+}
+
+.clients-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--pri);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.clients-add-btn:hover {
+  background: var(--sec);
+}
+
+/* Предупреждение о дубликате */
+
+.clients-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fef9e7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+}
+
+.clients-warning-close {
+  background: none;
+  border: none;
+  color: #92400e;
+  padding: 2px;
+  display: flex;
+}
+
+/* Тулбар: поиск + фильтры */
+
+.clients-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.clients-search {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+}
+
+.clients-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-light);
+  pointer-events: none;
+}
+
+.clients-search input {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  background: var(--card);
+  transition: border-color 0.2s;
+}
+
+.clients-search input:focus {
+  outline: none;
+  border-color: var(--sec);
+  box-shadow: 0 0 0 3px rgba(60, 168, 168, 0.15);
+}
+
+.clients-filters {
+  display: flex;
+  gap: 8px;
+}
+
+.clients-filters select {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.clients-filters select:focus {
+  outline: none;
+  border-color: var(--sec);
+}
+
+/* Ошибка */
+
+.clients-error {
+  background: #fef2f2;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+}
+
+/* Загрузка */
+
+.clients-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-light);
+  font-size: 1rem;
+}
+
+/* Счётчик */
+
+.clients-count {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  margin-bottom: 12px;
+}
+
+/* Список карточек */
+
+.clients-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+/* Пустое состояние */
+
+.clients-empty {
+  text-align: center;
+  padding: 80px 20px;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.clients-empty h3 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--text);
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.clients-empty p {
+  color: var(--text-light);
+  font-size: 0.875rem;
+  margin-bottom: 24px;
+}
+
+.clients-empty-btn {
+  background: var(--acc);
+  color: var(--pri);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 24px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: opacity 0.2s;
+}
+
+.clients-empty-btn:hover {
+  opacity: 0.85;
+}
+
+/* Пагинация */
+
+.clients-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.clients-pagination button {
+  background: var(--card);
+  color: var(--pri);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.clients-pagination button:hover:not(:disabled) {
+  background: var(--bg);
+}
+
+.clients-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.clients-pagination span {
+  font-size: 0.875rem;
+  color: var(--text-light);
+}
+
+/* === Модальная форма клиента === */
+
+.client-form-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.client-form-modal {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 32px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.client-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.client-form-header h2 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--pri);
+}
+
+.client-form-close {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  padding: 4px;
+  display: flex;
+}
+
+.client-form-close:hover {
+  color: var(--text);
+}
+
+.client-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.client-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.client-form-field label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.client-form-field input,
+.client-form-field select,
+.client-form-field textarea {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.client-form-field input:focus,
+.client-form-field select:focus,
+.client-form-field textarea:focus {
+  outline: none;
+  border-color: var(--sec);
+  box-shadow: 0 0 0 3px rgba(60, 168, 168, 0.15);
+}
+
+.client-form-field textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.client-form-error {
+  background: #fef2f2;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.875rem;
+}
+
+.client-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.client-form-cancel {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  color: var(--text);
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.client-form-cancel:hover {
+  background: var(--bg);
+}
+
+.client-form-submit {
+  background: var(--pri);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.client-form-submit:hover {
+  background: var(--sec);
+}
+
+.client-form-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* === Карточка клиента === */
+
+.client-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.client-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.client-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.client-card-name {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: var(--text);
+  margin: 0;
+}
+
+.client-card-status {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+.client-card-status.active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.client-card-status.potential {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.client-card-status.inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.client-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.client-card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.client-card-row svg {
+  flex-shrink: 0;
+}
+
+.client-card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.client-card-actions button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  transition: all 0.2s;
+}
+
+.client-card-actions button:hover {
+  border-color: var(--sec);
+  color: var(--sec);
+}
+
+.client-card-actions .delete-btn:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* === ClientPicker === */
+
+.client-picker {
+  position: relative;
+}
+
+.client-picker-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.client-picker-input:focus {
+  outline: none;
+  border-color: var(--sec);
+  box-shadow: 0 0 0 3px rgba(60, 168, 168, 0.15);
+}
+
+.client-picker-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  margin-top: 4px;
+}
+
+.client-picker-option {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.15s;
+}
+
+.client-picker-option:hover {
+  background: var(--bg);
+}
+
+.client-picker-empty {
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.client-picker-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+}
+
+.client-picker-clear {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+}
+
+.client-picker-clear:hover {
+  color: var(--danger);
+}
