@@ -800,6 +800,7 @@ function ClientDetail() {
       {showTaskForm && (
         <TaskForm
           task={editingTask}
+          fixedClient={client}
           onSubmit={handleTaskSubmit}
           onClose={() => { setShowTaskForm(false); setEditingTask(null); }}
         />
