@@ -25,6 +25,9 @@ function ClientDetail() {
   const [linkValue, setLinkValue] = useState('');
   const [linkSaving, setLinkSaving] = useState(false);
 
+  // Заметки (пока локально — API появится в задаче 2.5)
+  const [noteText, setNoteText] = useState('');
+
   const fetchClient = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -194,7 +197,7 @@ function ClientDetail() {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M11.5 2.5l2 2L5 13H3v-2l8.5-8.5z" stroke="currentColor" strokeWidth="1.2" fill="none" />
             </svg>
-            Редактировать
+            Изменить
           </button>
           <button className="cd-btn-delete" onClick={handleDelete}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -205,6 +208,17 @@ function ClientDetail() {
         </div>
       </div>
 
+      {/* Заметка клиента */}
+      {client.note && (
+        <div className="cd-note">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 2H5a1.5 1.5 0 00-1.5 1.5v9A1.5 1.5 0 005 14h6a1.5 1.5 0 001.5-1.5V5.5L10 2z" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <path d="M6 8h4M6 10.5h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+          <span>{client.note}</span>
+        </div>
+      )}
+
       {/* Ссылка на документы */}
       <div className="cd-docs">
         <div className="cd-docs-left">
@@ -212,16 +226,18 @@ function ClientDetail() {
             <path d="M10 2H5a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7l-5-5z" stroke="currentColor" strokeWidth="1.2" fill="none" />
             <path d="M10 2v5h5" stroke="currentColor" strokeWidth="1.2" fill="none" />
           </svg>
-          <span className="cd-docs-label">Документы:</span>
           {client.link ? (
             <a href={client.link} target="_blank" rel="noopener noreferrer" className="cd-docs-link">
-              {client.link.length > 50 ? client.link.slice(0, 50) + '...' : client.link}
+              Документы клиента
             </a>
           ) : (
-            <span className="cd-docs-empty">Не указана</span>
+            <span className="cd-docs-empty">Нет ссылки на документы</span>
           )}
         </div>
         <button className="cd-docs-btn" onClick={openLinkForm}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11.5 2.5l2 2L5 13H3v-2l8.5-8.5z" stroke="currentColor" strokeWidth="1.2" fill="none" />
+          </svg>
           {client.link ? 'Изменить' : 'Добавить'}
         </button>
       </div>
@@ -230,58 +246,106 @@ function ClientDetail() {
       {summary && (
         <div className="cd-summary">
           <div className="cd-summary-card">
-            <span className="cd-summary-value">{formatCurrency(summary.totalPremium)}</span>
+            <span className="cd-summary-value cd-summary-accent">{formatCurrency(summary.totalPremium)}</span>
             <span className="cd-summary-label">Общая премия</span>
           </div>
           <div className="cd-summary-card">
             <span className="cd-summary-value">{formatCurrency(summary.totalCommission)}</span>
-            <span className="cd-summary-label">Комиссия (КВ)</span>
+            <span className="cd-summary-label">Общая КВ</span>
           </div>
           <div className="cd-summary-card">
-            <span className="cd-summary-value">{summary.totalPaidInstallments}/{summary.totalInstallments}</span>
-            <span className="cd-summary-label">Взносы оплачены</span>
+            <span className="cd-summary-value cd-summary-sec">{summary.totalPaidInstallments}/{summary.totalInstallments}</span>
+            <span className="cd-summary-label">Взносов оплачено</span>
           </div>
           <div className="cd-summary-card">
             <span className="cd-summary-value">{summary.activeContracts}/{summary.contractCount}</span>
-            <span className="cd-summary-label">Активные договоры</span>
+            <span className="cd-summary-label">Активных</span>
           </div>
         </div>
       )}
 
-      {/* Заметка */}
-      {client.note && (
-        <div className="cd-note">
-          <h3>Заметка</h3>
-          <p>{client.note}</p>
-        </div>
-      )}
-
-      {/* Договоры (пока пустой раздел — заполнится в фазе 3) */}
+      {/* Договоры */}
       <div className="cd-section">
         <div className="cd-section-header">
-          <h2>Договоры</h2>
+          <h2>Договоры ({summary ? summary.contractCount : 0})</h2>
+          <button className="cd-section-add-btn" onClick={() => alert('Форма договора будет доступна в фазе 3')}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Договор
+          </button>
         </div>
         <div className="cd-section-empty">
           <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="8" y="6" width="24" height="28" rx="2" stroke="var(--sec)" strokeWidth="1.5" fill="none" opacity="0.4" />
             <path d="M14 14h12M14 19h12M14 24h8" stroke="var(--sec)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
           </svg>
-          <p>Договоры появятся здесь после создания</p>
+          <p>У клиента нет договоров</p>
+          <button className="cd-section-empty-btn" onClick={() => alert('Форма договора будет доступна в фазе 3')}>
+            Добавить договор
+          </button>
         </div>
       </div>
 
-      {/* Заметки / история (заполнится в задаче 2.6) */}
+      {/* Ромбовый разделитель */}
+      <div className="cd-separator">
+        <div className="cd-separator-line" />
+        <div className="cd-separator-diamond" />
+        <div className="cd-separator-line" />
+      </div>
+
+      {/* Заметки и история */}
       <div className="cd-section">
         <div className="cd-section-header">
-          <h2>Заметки</h2>
+          <h2>Заметки и история</h2>
         </div>
-        <div className="cd-section-empty">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="6" y="8" width="28" height="24" rx="2" stroke="var(--sec)" strokeWidth="1.5" fill="none" opacity="0.4" />
-            <path d="M12 16h16M12 22h10" stroke="var(--sec)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-          </svg>
-          <p>Заметки появятся здесь после добавления</p>
+        <div className="cd-notes-input">
+          <input
+            type="text"
+            placeholder="Добавить заметку — звонок, встреча, договорённость..."
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && noteText.trim()) {
+                alert('API заметок будет доступно в задаче 2.5');
+                setNoteText('');
+              }
+            }}
+          />
+          <button
+            className="cd-notes-add-btn"
+            onClick={() => {
+              if (noteText.trim()) {
+                alert('API заметок будет доступно в задаче 2.5');
+                setNoteText('');
+              }
+            }}
+          >
+            Добавить
+          </button>
         </div>
+        <p className="cd-notes-empty">Нет заметок</p>
+      </div>
+
+      {/* Ромбовый разделитель */}
+      <div className="cd-separator">
+        <div className="cd-separator-line" />
+        <div className="cd-separator-diamond" />
+        <div className="cd-separator-line" />
+      </div>
+
+      {/* Задачи */}
+      <div className="cd-section">
+        <div className="cd-section-header">
+          <h2>Задачи (0)</h2>
+          <button className="cd-section-add-btn cd-section-add-btn-ghost" onClick={() => alert('Форма задачи будет доступна в фазе 4')}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Задача
+          </button>
+        </div>
+        <p className="cd-notes-empty">Нет задач</p>
       </div>
 
       {/* Модаль редактирования клиента */}
