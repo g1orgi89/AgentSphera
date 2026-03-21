@@ -2,12 +2,29 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import ClientForm from '../components/ClientForm';
+import ContractForm from '../components/ContractForm';
 import './ClientDetail.css';
 
 const STATUS_LABELS = {
   active: 'Активный',
   potential: 'Потенциальный',
   inactive: 'Неактивный'
+};
+
+const CONTRACT_STATUS_LABELS = {
+  active: 'Действующий',
+  expiring_7: 'Истекает',
+  expiring_14: 'Истекает',
+  expiring_30: 'Истекает',
+  expired: 'Истёк'
+};
+
+const CONTRACT_STATUS_CLASS = {
+  active: 'cd-contract-status-active',
+  expiring_7: 'cd-contract-status-danger',
+  expiring_14: 'cd-contract-status-warning',
+  expiring_30: 'cd-contract-status-warning',
+  expired: 'cd-contract-status-danger'
 };
 
 function ClientDetail() {
@@ -24,6 +41,11 @@ function ClientDetail() {
   const [showLinkForm, setShowLinkForm] = useState(false);
   const [linkValue, setLinkValue] = useState('');
   const [linkSaving, setLinkSaving] = useState(false);
+
+  // Договоры
+  const [contracts, setContracts] = useState([]);
+  const [showContractForm, setShowContractForm] = useState(false);
+  const [editingContract, setEditingContract] = useState(null);
 
   // Заметки
   const [notes, setNotes] = useState([]);
@@ -51,6 +73,23 @@ function ClientDetail() {
     }
   }, [id]);
 
+  const fetchContracts = useCallback(async () => {
+    try {
+      const res = await api.get('/contracts', {
+        params: { search: '', limit: 100 }
+      });
+      // Фильтруем по clientId на клиенте (API возвращает все договоры пользователя)
+      const all = res.data.data || [];
+      const clientContracts = all.filter(c => {
+        const cid = typeof c.clientId === 'object' ? c.clientId._id : c.clientId;
+        return cid === id;
+      });
+      setContracts(clientContracts);
+    } catch {
+      // Не критично
+    }
+  }, [id]);
+
   const fetchNotes = useCallback(async () => {
     try {
       const res = await api.get(`/clients/${id}/notes`);
@@ -62,8 +101,9 @@ function ClientDetail() {
 
   useEffect(() => {
     fetchClient();
+    fetchContracts();
     fetchNotes();
-  }, [fetchClient, fetchNotes]);
+  }, [fetchClient, fetchContracts, fetchNotes]);
 
   const handleAddNote = async () => {
     if (!noteText.trim()) return;
@@ -128,6 +168,50 @@ function ClientDetail() {
     setShowLinkForm(true);
   };
 
+  // --- Договоры: CRUD ---
+
+  const handleContractSubmit = async (payload) => {
+    if (editingContract) {
+      await api.put(`/contracts/${editingContract._id}`, payload);
+    } else {
+      await api.post('/contracts', payload);
+    }
+    setShowContractForm(false);
+    setEditingContract(null);
+    fetchContracts();
+    fetchClient(); // Обновляем сводку
+  };
+
+  const handleContractEdit = (contract) => {
+    setEditingContract(contract);
+    setShowContractForm(true);
+  };
+
+  const handleContractDelete = async (contractId) => {
+    if (!window.confirm('Удалить договор?')) return;
+    try {
+      await api.delete(`/contracts/${contractId}`);
+      fetchContracts();
+      fetchClient(); // Обновляем сводку
+    } catch (err) {
+      setError(err.response?.data?.error || 'Ошибка удаления договора');
+    }
+  };
+
+  const handleInstallmentToggle = async (contractId, idx, currentPaid) => {
+    try {
+      await api.patch(`/contracts/${contractId}/installments/${idx}`, {
+        paid: !currentPaid
+      });
+      fetchContracts();
+      fetchClient(); // Обновляем сводку
+    } catch (err) {
+      setError(err.response?.data?.error || 'Ошибка обновления взноса');
+    }
+  };
+
+  // --- Форматирование ---
+
   const formatBirthday = (date) => {
     if (!date) return null;
     return new Date(date).toLocaleDateString('ru-RU', {
@@ -149,6 +233,32 @@ function ClientDetail() {
   const formatCurrency = (num) => {
     if (num === null || num === undefined) return '0';
     return num.toLocaleString('ru-RU');
+  };
+
+  const getContractStatusLabel = (contract) => {
+    const label = CONTRACT_STATUS_LABELS[contract.status] || contract.status;
+    if (contract.status && contract.status.startsWith('expiring') && contract.endDate) {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const end = new Date(contract.endDate);
+      end.setHours(0, 0, 0, 0);
+      const days = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+      return `${label} (${days} дн.)`;
+    }
+    return label;
+  };
+
+  const getInstallmentStatus = (inst) => {
+    if (inst.paid) return { label: 'Оплачен', cls: 'cd-inst-paid' };
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const due = new Date(inst.dueDate);
+    due.setHours(0, 0, 0, 0);
+    const diffMs = due - now;
+    const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    if (days < 0) return { label: `Просрочен (${Math.abs(days)} дн.)`, cls: 'cd-inst-overdue' };
+    if (days <= 7) return { label: `Скоро (${days} дн.)`, cls: 'cd-inst-soon' };
+    return { label: 'Ожидание', cls: 'cd-inst-waiting' };
   };
 
   if (loading) {
@@ -311,24 +421,126 @@ function ClientDetail() {
       {/* Договоры */}
       <div className="cd-section">
         <div className="cd-section-header">
-          <h2>Договоры ({summary ? summary.contractCount : 0})</h2>
-          <button className="cd-section-add-btn" onClick={() => alert('Форма договора будет доступна в фазе 3')}>
+          <h2>Договоры ({contracts.length})</h2>
+          <button
+            className="cd-section-add-btn"
+            onClick={() => { setEditingContract(null); setShowContractForm(true); }}
+          >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
             Договор
           </button>
         </div>
-        <div className="cd-section-empty">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="8" y="6" width="24" height="28" rx="2" stroke="var(--sec)" strokeWidth="1.5" fill="none" opacity="0.4" />
-            <path d="M14 14h12M14 19h12M14 24h8" stroke="var(--sec)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-          </svg>
-          <p>У клиента нет договоров</p>
-          <button className="cd-section-empty-btn" onClick={() => alert('Форма договора будет доступна в фазе 3')}>
-            Добавить договор
-          </button>
-        </div>
+
+        {contracts.length === 0 ? (
+          <div className="cd-section-empty">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8" y="6" width="24" height="28" rx="2" stroke="var(--sec)" strokeWidth="1.5" fill="none" opacity="0.4" />
+              <path d="M14 14h12M14 19h12M14 24h8" stroke="var(--sec)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+            </svg>
+            <p>У клиента нет договоров</p>
+            <button
+              className="cd-section-empty-btn"
+              onClick={() => { setEditingContract(null); setShowContractForm(true); }}
+            >
+              Добавить договор
+            </button>
+          </div>
+        ) : (
+          <div className="cd-contracts-list">
+            {contracts.map(contract => (
+              <div key={contract._id} className="cd-contract-card">
+                <div className="cd-contract-top">
+                  <div className="cd-contract-info">
+                    <div className="cd-contract-title">
+                      <span className="cd-contract-company">{contract.company}</span>
+                      <span className="cd-contract-type">{contract.type}</span>
+                    </div>
+                    {contract.number && (
+                      <div className="cd-contract-number">#{contract.number}</div>
+                    )}
+                  </div>
+                  <span className={`cd-contract-status ${CONTRACT_STATUS_CLASS[contract.status] || ''}`}>
+                    {getContractStatusLabel(contract)}
+                  </span>
+                </div>
+
+                <div className="cd-contract-details">
+                  <div className="cd-contract-detail">
+                    <span className="cd-contract-detail-label">Период</span>
+                    <span>{formatDate(contract.startDate) || '—'} — {formatDate(contract.endDate) || '—'}</span>
+                  </div>
+                  <div className="cd-contract-detail">
+                    <span className="cd-contract-detail-label">Премия</span>
+                    <span>{formatCurrency(contract.premium)} ₽</span>
+                  </div>
+                  <div className="cd-contract-detail">
+                    <span className="cd-contract-detail-label">КВ</span>
+                    <span className="cd-contract-commission">{formatCurrency(contract.commissionAmount)} ₽</span>
+                  </div>
+                  {contract.objectType && (
+                    <div className="cd-contract-detail">
+                      <span className="cd-contract-detail-label">Объект</span>
+                      <span>
+                        {contract.objectType === 'auto' && (contract.objectData?.car || 'Авто')}
+                        {contract.objectType === 'realty' && (contract.objectData?.realtyType || 'Недвижимость')}
+                        {contract.objectType === 'life' && (contract.objectData?.insured || 'Жизнь')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Взносы */}
+                {contract.installments && contract.installments.length > 0 && (
+                  <div className="cd-contract-installments">
+                    {contract.installments.map((inst, idx) => {
+                      const instStatus = getInstallmentStatus(inst);
+                      return (
+                        <button
+                          key={inst._id || idx}
+                          className={`cd-inst-tag ${instStatus.cls}`}
+                          onClick={() => handleInstallmentToggle(contract._id, idx, inst.paid)}
+                          title={`Клик: ${inst.paid ? 'отменить оплату' : 'отметить оплаченным'}`}
+                        >
+                          {formatCurrency(inst.amount)} ₽ · {formatDate(inst.dueDate)} · {instStatus.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Документы договора */}
+                {contract.link && (
+                  <a href={contract.link} target="_blank" rel="noopener noreferrer" className="cd-contract-link">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M10 2H5a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V5l-3-3z" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                    </svg>
+                    Документы
+                  </a>
+                )}
+
+                <div className="cd-contract-actions">
+                  <button className="cd-contract-action-btn" onClick={() => handleContractEdit(contract)}>
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M11.5 2.5l2 2L5 13H3v-2l8.5-8.5z" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                    </svg>
+                    Изменить
+                  </button>
+                  <button
+                    className="cd-contract-action-btn cd-contract-action-delete"
+                    onClick={() => handleContractDelete(contract._id)}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M3 4h10M6 4V3h4v1M5 4v8.5a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+                    </svg>
+                    Удалить
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Ромбовый разделитель */}
@@ -412,6 +624,16 @@ function ClientDetail() {
           client={client}
           onSubmit={handleEditSubmit}
           onClose={() => setShowEditForm(false)}
+        />
+      )}
+
+      {/* Модаль формы договора */}
+      {showContractForm && (
+        <ContractForm
+          contract={editingContract}
+          clientId={id}
+          onSubmit={handleContractSubmit}
+          onClose={() => { setShowContractForm(false); setEditingContract(null); }}
         />
       )}
 
