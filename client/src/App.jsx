@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
 
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -17,13 +18,27 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/clients" element={<Clients />} />
-      <Route path="/clients/:id" element={<ClientDetail />} />
-      <Route path="/contracts" element={<Contracts />} />
-      <Route path="/tasks" element={<Tasks />} />
-      <Route path="/calendar" element={<Calendar />} />
-      <Route path="/acts" element={<Acts />} />
+      <Route path="/dashboard" element={
+        <ProtectedRoute><Dashboard /></ProtectedRoute>
+      } />
+      <Route path="/clients" element={
+        <ProtectedRoute><Clients /></ProtectedRoute>
+      } />
+      <Route path="/clients/:id" element={
+        <ProtectedRoute><ClientDetail /></ProtectedRoute>
+      } />
+      <Route path="/contracts" element={
+        <ProtectedRoute><Contracts /></ProtectedRoute>
+      } />
+      <Route path="/tasks" element={
+        <ProtectedRoute><Tasks /></ProtectedRoute>
+      } />
+      <Route path="/calendar" element={
+        <ProtectedRoute><Calendar /></ProtectedRoute>
+      } />
+      <Route path="/acts" element={
+        <ProtectedRoute><Acts /></ProtectedRoute>
+      } />
     </Routes>
   );
 }
