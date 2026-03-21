@@ -40,6 +40,9 @@ function Clients() {
   // Предупреждение о дубликате
   const [warning, setWarning] = useState('');
 
+  // Экспорт
+  const [exporting, setExporting] = useState(false);
+
   const fetchClients = useCallback(async (page = 1) => {
     setLoading(true);
     setError('');
@@ -117,16 +120,49 @@ function Clients() {
     navigate(`/clients/${clientId}`);
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await api.get('/export/xlsx', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'contracts.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError('Ошибка экспорта');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="clients-page">
       <div className="clients-header">
         <h1>Клиенты</h1>
-        <button className="clients-add-btn" onClick={handleCreate}>
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M9 3v12M3 9h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          Добавить клиента
-        </button>
+        <div className="clients-header-actions">
+          <button
+            className="clients-export-btn"
+            onClick={handleExport}
+            disabled={exporting}
+            title="Экспорт договоров в Excel"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 12.5v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 3v8.5M5.5 8L9 11.5 12.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {exporting ? 'Экспорт...' : 'Excel'}
+          </button>
+          <button className="clients-add-btn" onClick={handleCreate}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 3v12M3 9h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Добавить клиента
+          </button>
+        </div>
       </div>
 
       {warning && (

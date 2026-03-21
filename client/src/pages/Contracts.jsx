@@ -58,6 +58,9 @@ function Contracts() {
 
   const [showForm, setShowForm] = useState(false);
 
+  // Экспорт
+  const [exporting, setExporting] = useState(false);
+
   // Уникальные значения для фильтров
   const [companies, setCompanies] = useState([]);
   const [types, setTypes] = useState([]);
@@ -145,6 +148,25 @@ function Contracts() {
     fetchContracts();
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await api.get('/export/xlsx', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'contracts.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError('Ошибка экспорта');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // --- Форматирование ---
 
   const formatDate = (date) => {
@@ -192,12 +214,26 @@ function Contracts() {
     <div className="contracts-page">
       <div className="contracts-header">
         <h1>Договоры</h1>
-        <button className="contracts-add-btn" onClick={() => setShowForm(true)}>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          Новый договор
-        </button>
+        <div className="contracts-header-actions">
+          <button
+            className="contracts-export-btn"
+            onClick={handleExport}
+            disabled={exporting}
+            title="Экспорт договоров в Excel"
+          >
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 12.5v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 3v8.5M5.5 8L9 11.5 12.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {exporting ? 'Экспорт...' : 'Excel'}
+          </button>
+          <button className="contracts-add-btn" onClick={() => setShowForm(true)}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Новый договор
+          </button>
+        </div>
       </div>
 
       {/* Тулбар */}

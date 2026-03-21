@@ -19,6 +19,12 @@
   color: var(--pri);
 }
 
+.clients-header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .clients-add-btn {
   display: flex;
   align-items: center;
@@ -35,6 +41,31 @@
 
 .clients-add-btn:hover {
   background: var(--sec);
+}
+
+.clients-export-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  color: var(--pri);
+  border: 1px solid var(--pri);
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.clients-export-btn:hover {
+  background: var(--pri);
+  color: #fff;
+}
+
+.clients-export-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Предупреждение о дубликате */
