@@ -1,0 +1,363 @@
+/* === Страница договоров === */
+
+.contracts-page {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.contracts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.contracts-header h1 {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  color: var(--pri);
+}
+
+.contracts-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--pri);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.contracts-add-btn:hover {
+  background: var(--sec);
+}
+
+/* Тулбар */
+
+.contracts-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.contracts-search {
+  flex: 1;
+  min-width: 180px;
+  position: relative;
+}
+
+.contracts-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-light);
+  pointer-events: none;
+}
+
+.contracts-search input {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  background: var(--card);
+  transition: border-color 0.2s;
+}
+
+.contracts-search input:focus {
+  outline: none;
+  border-color: var(--sec);
+  box-shadow: 0 0 0 3px rgba(60, 168, 168, 0.15);
+}
+
+.contracts-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.contracts-filters select {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.contracts-filters select:focus {
+  outline: none;
+  border-color: var(--sec);
+}
+
+/* Ошибка / загрузка */
+
+.contracts-error {
+  background: #fef2f2;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+}
+
+.contracts-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-light);
+  font-size: 1rem;
+}
+
+.contracts-count {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin-bottom: 10px;
+}
+
+/* Таблица */
+
+.contracts-table-wrap {
+  overflow-x: auto;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.contracts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.contracts-table th {
+  background: var(--bg);
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 700;
+  color: var(--text-light);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 2px solid var(--border);
+  transition: color 0.2s;
+}
+
+.contracts-table th:hover {
+  color: var(--pri);
+}
+
+.contracts-table th.sorted {
+  color: var(--pri);
+}
+
+.contracts-table th .sort-arrow {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 0.65rem;
+  opacity: 0.5;
+}
+
+.contracts-table th.sorted .sort-arrow {
+  opacity: 1;
+}
+
+.contracts-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.contracts-table tbody tr {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.contracts-table tbody tr:hover {
+  background: rgba(60, 168, 168, 0.04);
+}
+
+/* Ячейки */
+
+.ct-client {
+  font-weight: 700;
+  color: var(--pri);
+}
+
+.ct-company {
+  font-weight: 600;
+}
+
+.ct-type {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-light);
+}
+
+.ct-number {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+.ct-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.ct-status-active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.ct-status-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.ct-status-danger {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.ct-premium {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ct-commission {
+  font-weight: 700;
+  color: var(--sec);
+  white-space: nowrap;
+}
+
+.ct-installments {
+  font-size: 0.75rem;
+}
+
+.ct-na {
+  color: var(--text-light);
+  font-size: 0.75rem;
+}
+
+/* Строка итого */
+
+.contracts-table tfoot td {
+  padding: 12px 12px;
+  font-weight: 900;
+  background: var(--bg);
+  border-top: 2px solid var(--border);
+  font-size: 0.8rem;
+}
+
+.ct-total-label {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  color: var(--pri);
+}
+
+/* Пустое состояние */
+
+.contracts-empty {
+  text-align: center;
+  padding: 80px 20px;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.contracts-empty h3 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--text);
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.contracts-empty p {
+  color: var(--text-light);
+  font-size: 0.875rem;
+  margin-bottom: 24px;
+}
+
+.contracts-empty-btn {
+  background: var(--acc);
+  color: var(--pri);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 24px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: opacity 0.2s;
+}
+
+.contracts-empty-btn:hover {
+  opacity: 0.85;
+}
+
+/* Пагинация */
+
+.contracts-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.contracts-pagination button {
+  background: var(--card);
+  color: var(--pri);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.contracts-pagination button:hover:not(:disabled) {
+  background: var(--bg);
+}
+
+.contracts-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.contracts-pagination span {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+@media (max-width: 768px) {
+  .contracts-toolbar {
+    flex-direction: column;
+  }
+
+  .contracts-filters {
+    width: 100%;
+  }
+
+  .contracts-filters select {
+    flex: 1;
+  }
+}
