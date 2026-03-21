@@ -399,6 +399,211 @@ a.cd-contact:hover {
   background: var(--sec);
 }
 
+/* === Список договоров === */
+
+.cd-contracts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cd-contract-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  transition: border-color 0.2s;
+}
+
+.cd-contract-card:hover {
+  border-color: var(--sec);
+}
+
+.cd-contract-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.cd-contract-info {
+  min-width: 0;
+}
+
+.cd-contract-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cd-contract-company {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.cd-contract-type {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-light);
+}
+
+.cd-contract-number {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+
+/* Статус договора */
+
+.cd-contract-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cd-contract-status-active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.cd-contract-status-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cd-contract-status-danger {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+/* Детали договора */
+
+.cd-contract-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 10px;
+}
+
+.cd-contract-detail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.cd-contract-detail-label {
+  color: var(--text-light);
+}
+
+.cd-contract-commission {
+  font-weight: 700;
+  color: var(--sec);
+}
+
+/* Взносы */
+
+.cd-contract-installments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.cd-inst-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.cd-inst-tag:hover {
+  opacity: 0.8;
+}
+
+.cd-inst-paid {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.cd-inst-overdue {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.cd-inst-soon {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cd-inst-waiting {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* Ссылка на документы договора */
+
+.cd-contract-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--sec);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px dashed var(--sec);
+  margin-bottom: 10px;
+}
+
+.cd-contract-link:hover {
+  color: var(--pri);
+  border-color: var(--pri);
+}
+
+/* Кнопки договора */
+
+.cd-contract-actions {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.cd-contract-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-light);
+  transition: all 0.2s;
+}
+
+.cd-contract-action-btn:hover {
+  border-color: var(--sec);
+  color: var(--sec);
+}
+
+.cd-contract-action-delete:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
 /* Ромбовый разделитель */
 
 .cd-separator {
@@ -566,5 +771,14 @@ a.cd-contact:hover {
 
   .cd-notes-input {
     flex-direction: column;
+  }
+
+  .cd-contract-top {
+    flex-direction: column;
+  }
+
+  .cd-contract-details {
+    flex-direction: column;
+    gap: 4px;
   }
 }
