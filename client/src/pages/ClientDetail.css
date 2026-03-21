@@ -743,6 +743,148 @@ a.cd-contact:hover {
   opacity: 1;
 }
 
+/* === Задачи в карточке клиента === */
+
+.cd-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cd-task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s;
+}
+
+.cd-task-item:hover {
+  border-color: var(--sec);
+}
+
+.cd-task-item-done {
+  opacity: 0.6;
+}
+
+.cd-task-checkbox {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 5px;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  transition: all 0.2s;
+  color: #fff;
+  padding: 0;
+}
+
+.cd-task-checkbox:hover {
+  border-color: var(--sec);
+}
+
+.cd-task-checkbox-checked {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.cd-task-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.cd-task-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cd-task-title {
+  font-size: 0.85rem;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.cd-task-title-done {
+  text-decoration: line-through;
+  color: var(--text-light);
+}
+
+.cd-task-priority {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 100px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.cd-task-priority-high {
+  background: #fef2f2;
+  color: var(--danger);
+}
+
+.cd-task-priority-medium {
+  background: #fef9e7;
+  color: #92400e;
+}
+
+.cd-task-priority-low {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.cd-task-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+.cd-task-date-overdue {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.cd-task-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.cd-task-action-btn {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  opacity: 0.5;
+}
+
+.cd-task-action-btn:hover {
+  color: var(--sec);
+  opacity: 1;
+}
+
+.cd-task-action-delete:hover {
+  color: var(--danger);
+}
+
 /* Адаптив */
 
 @media (max-width: 640px) {

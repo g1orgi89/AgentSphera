@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import ClientForm from '../components/ClientForm';
 import ContractForm from '../components/ContractForm';
+import TaskForm from '../components/TaskForm';
 import './ClientDetail.css';
 
 const STATUS_LABELS = {
@@ -25,6 +26,12 @@ const CONTRACT_STATUS_CLASS = {
   expiring_14: 'cd-contract-status-warning',
   expiring_30: 'cd-contract-status-warning',
   expired: 'cd-contract-status-danger'
+};
+
+const PRIORITY_MAP = {
+  h: { label: 'Высокий', className: 'cd-task-priority-high' },
+  m: { label: 'Средний', className: 'cd-task-priority-medium' },
+  l: { label: 'Низкий', className: 'cd-task-priority-low' }
 };
 
 function ClientDetail() {
@@ -51,6 +58,11 @@ function ClientDetail() {
   const [notes, setNotes] = useState([]);
   const [noteText, setNoteText] = useState('');
   const [noteAdding, setNoteAdding] = useState(false);
+
+  // Задачи
+  const [clientTasks, setClientTasks] = useState([]);
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
 
   const fetchClient = useCallback(async () => {
     setLoading(true);
@@ -99,11 +111,28 @@ function ClientDetail() {
     }
   }, [id]);
 
+  const fetchTasks = useCallback(async () => {
+    try {
+      const res = await api.get('/tasks', {
+        params: { filter: 'all', limit: 100, sort: 'dueDate' }
+      });
+      const all = res.data.data || [];
+      const filtered = all.filter(t => {
+        const cid = typeof t.clientId === 'object' ? t.clientId?._id : t.clientId;
+        return cid === id;
+      });
+      setClientTasks(filtered);
+    } catch {
+      // Не критично
+    }
+  }, [id]);
+
   useEffect(() => {
     fetchClient();
     fetchContracts();
     fetchNotes();
-  }, [fetchClient, fetchContracts, fetchNotes]);
+    fetchTasks();
+  }, [fetchClient, fetchContracts, fetchNotes, fetchTasks]);
 
   const handleAddNote = async () => {
     if (!noteText.trim()) return;
@@ -210,6 +239,49 @@ function ClientDetail() {
     }
   };
 
+  // --- Задачи: CRUD ---
+
+  const handleTaskSubmit = async (data) => {
+    try {
+      // Привязываем к текущему клиенту
+      const payload = { ...data, clientId: id };
+      if (editingTask) {
+        await api.put(`/tasks/${editingTask._id}`, payload);
+      } else {
+        await api.post('/tasks', payload);
+      }
+      setShowTaskForm(false);
+      setEditingTask(null);
+      fetchTasks();
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleTaskEdit = (task) => {
+    setEditingTask(task);
+    setShowTaskForm(true);
+  };
+
+  const handleTaskToggle = async (taskId) => {
+    try {
+      const res = await api.patch(`/tasks/${taskId}/toggle`);
+      setClientTasks(prev => prev.map(t => t._id === taskId ? res.data.data : t));
+    } catch (err) {
+      setError(err.response?.data?.error || 'Ошибка переключения');
+    }
+  };
+
+  const handleTaskDelete = async (taskId) => {
+    if (!window.confirm('Удалить задачу?')) return;
+    try {
+      await api.delete(`/tasks/${taskId}`);
+      fetchTasks();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Ошибка удаления задачи');
+    }
+  };
+
   // --- Форматирование ---
 
   const formatBirthday = (date) => {
@@ -261,6 +333,15 @@ function ClientDetail() {
     return { label: 'Ожидание', cls: 'cd-inst-waiting' };
   };
 
+  const isTaskOverdue = (dateStr) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    d.setHours(0, 0, 0, 0);
+    return d < today;
+  };
+
   if (loading) {
     return (
       <div className="cd-page">
@@ -281,6 +362,8 @@ function ClientDetail() {
   }
 
   if (!client) return null;
+
+  const activeTasksCount = clientTasks.filter(t => !t.done).length;
 
   return (
     <div className="cd-page">
@@ -607,15 +690,91 @@ function ClientDetail() {
       {/* Задачи */}
       <div className="cd-section">
         <div className="cd-section-header">
-          <h2>Задачи (0)</h2>
-          <button className="cd-section-add-btn cd-section-add-btn-ghost" onClick={() => alert('Форма задачи будет доступна в фазе 4')}>
+          <h2>Задачи ({activeTasksCount})</h2>
+          <button
+            className="cd-section-add-btn"
+            onClick={() => { setEditingTask(null); setShowTaskForm(true); }}
+          >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
             Задача
           </button>
         </div>
-        <p className="cd-notes-empty">Нет задач</p>
+
+        {clientTasks.length === 0 ? (
+          <div className="cd-section-empty">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="8" width="20" height="24" rx="3" stroke="var(--sec)" strokeWidth="1.5" fill="none" opacity="0.4" />
+              <path d="M16 16l3 3 5-5" stroke="var(--sec)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" />
+              <path d="M16 26h8" stroke="var(--sec)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+            </svg>
+            <p>Нет задач для этого клиента</p>
+            <button
+              className="cd-section-empty-btn"
+              onClick={() => { setEditingTask(null); setShowTaskForm(true); }}
+            >
+              Добавить задачу
+            </button>
+          </div>
+        ) : (
+          <div className="cd-tasks-list">
+            {clientTasks.map(task => {
+              const pri = PRIORITY_MAP[task.priority] || PRIORITY_MAP.m;
+              const overdue = !task.done && isTaskOverdue(task.dueDate);
+
+              return (
+                <div key={task._id} className={`cd-task-item ${task.done ? 'cd-task-item-done' : ''}`}>
+                  <button
+                    className={`cd-task-checkbox ${task.done ? 'cd-task-checkbox-checked' : ''}`}
+                    onClick={() => handleTaskToggle(task._id)}
+                    title={task.done ? 'Вернуть' : 'Завершить'}
+                  >
+                    {task.done && (
+                      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 7l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </button>
+
+                  <div className="cd-task-content">
+                    <div className="cd-task-title-row">
+                      <span className={`cd-task-title ${task.done ? 'cd-task-title-done' : ''}`}>
+                        {task.title}
+                      </span>
+                      <span className={`cd-task-priority ${pri.className}`}>
+                        {pri.label}
+                      </span>
+                    </div>
+                    {task.dueDate && (
+                      <span className={`cd-task-date ${overdue ? 'cd-task-date-overdue' : ''}`}>
+                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" />
+                          <path d="M7 4v3l2 1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                        </svg>
+                        {formatDate(task.dueDate)}
+                        {overdue && ' (просрочено)'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="cd-task-actions">
+                    <button className="cd-task-action-btn" onClick={() => handleTaskEdit(task)} title="Редактировать">
+                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M11.5 2.5l2 2L5 13H3v-2l8.5-8.5z" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                      </svg>
+                    </button>
+                    <button className="cd-task-action-btn cd-task-action-delete" onClick={() => handleTaskDelete(task._id)} title="Удалить">
+                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Модаль редактирования клиента */}
@@ -634,6 +793,15 @@ function ClientDetail() {
           clientId={id}
           onSubmit={handleContractSubmit}
           onClose={() => { setShowContractForm(false); setEditingContract(null); }}
+        />
+      )}
+
+      {/* Модаль формы задачи */}
+      {showTaskForm && (
+        <TaskForm
+          task={editingTask}
+          onSubmit={handleTaskSubmit}
+          onClose={() => { setShowTaskForm(false); setEditingTask(null); }}
         />
       )}
 
