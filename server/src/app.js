@@ -6,6 +6,8 @@ const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+const connectDB = require('./config/db');
+
 const app = express();
 
 // --- Middleware ---
@@ -97,6 +99,11 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Сервер запущен на порту ${PORT}`);
-});
+const start = async () => {
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`Сервер запущен на порту ${PORT}`);
+  });
+};
+
+start();
