@@ -1,4 +1,4 @@
-const ExcelJS = require('exceljs');
+const XLSX = require('xlsx');
 const Anthropic = require('@anthropic-ai/sdk');
 const Contract = require('../models/Contract');
 
@@ -7,13 +7,13 @@ const Contract = require('../models/Contract');
 async function extractTextFromFile(buffer, mimetype, originalName) {
   const ext = (originalName || '').toLowerCase().split('.').pop();
 
-  // Excel
+  // Excel (.xlsx и .xls)
   if (
     mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
     mimetype === 'application/vnd.ms-excel' ||
     ext === 'xlsx' || ext === 'xls'
   ) {
-    return await extractFromExcel(buffer);
+    return extractFromExcel(buffer);
   }
 
   // PDF
@@ -33,28 +33,30 @@ async function extractTextFromFile(buffer, mimetype, originalName) {
   throw new Error('Неподдерживаемый формат файла');
 }
 
-async function extractFromExcel(buffer) {
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer);
+function extractFromExcel(buffer) {
+  // SheetJS (xlsx) поддерживает и .xls (старый BIFF) и .xlsx (OOXML)
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
 
   const lines = [];
-  workbook.eachSheet((sheet) => {
-    sheet.eachRow((row) => {
-      const cells = [];
-      row.eachCell({ includeEmpty: true }, (cell) => {
-        const val = cell.value;
-        if (val === null || val === undefined) {
-          cells.push('');
-        } else if (typeof val === 'object' && val.result !== undefined) {
-          // Формулы
-          cells.push(String(val.result));
-        } else if (val instanceof Date) {
-          cells.push(val.toLocaleDateString('ru-RU'));
-        } else {
-          cells.push(String(val));
-        }
-      });
-      lines.push(cells.join(' | '));
+  workbook.SheetNames.forEach(sheetName => {
+    const sheet = workbook.Sheets[sheetName];
+    // Конвертируем лист в массив массивов (строки)
+    const data = XLSX.utils.sheet_to_json(sheet, {
+      header: 1,
+      defval: '',
+      blankrows: false,
+      raw: false
+    });
+
+    data.forEach(row => {
+      const cells = row.map(cell => {
+        if (cell === null || cell === undefined) return '';
+        return String(cell).trim();
+      }).filter(c => c !== '');
+
+      if (cells.length > 0) {
+        lines.push(cells.join(' | '));
+      }
     });
   });
 
