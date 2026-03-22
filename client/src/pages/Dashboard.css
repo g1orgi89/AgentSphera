@@ -1,0 +1,608 @@
+/* === Страница дашборда === */
+
+.dash-page {
+  padding: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Загрузка */
+
+.dash-loading {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-light);
+  font-size: 1rem;
+}
+
+/* Ошибка */
+
+.dash-error {
+  background: #fef2f2;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+}
+
+/* === Заголовок === */
+
+.dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dash-header h1 {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  color: var(--pri);
+}
+
+.dash-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dash-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  transition: border-color 0.2s;
+}
+
+.dash-search:focus-within {
+  border-color: var(--sec);
+  box-shadow: 0 0 0 3px rgba(60, 168, 168, 0.15);
+}
+
+.dash-search svg {
+  color: var(--text-light);
+  flex-shrink: 0;
+}
+
+.dash-search input {
+  border: none;
+  outline: none;
+  background: none;
+  padding: 10px 0;
+  font-size: 0.875rem;
+  width: 220px;
+  color: var(--text);
+}
+
+.dash-search input::placeholder {
+  color: var(--text-light);
+}
+
+.dash-period-select {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.dash-period-select:focus {
+  outline: none;
+  border-color: var(--sec);
+}
+
+/* === Тревоги === */
+
+.dash-alerts {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.dash-section-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 16px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.2s;
+}
+
+.dash-section-toggle:hover {
+  background: rgba(60, 168, 168, 0.04);
+}
+
+.dash-section-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-section-title {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: var(--pri);
+}
+
+.dash-alert-badge {
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 100px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.dash-alerts-body {
+  padding: 0 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Карточки тревог */
+
+.dash-alert-card {
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.dash-alert-danger {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+}
+
+.dash-alert-warning {
+  border: 1px solid #fde68a;
+  background: #fef9e7;
+}
+
+.dash-alert-info {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+}
+
+.dash-alert-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.dash-alert-card-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dash-alert-card-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.dash-alert-card-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 1px 7px;
+  border-radius: 100px;
+}
+
+.dash-alert-card-sum {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.dash-alert-card-details {
+  padding: 0 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dash-alert-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-wrap: wrap;
+}
+
+.dash-alert-detail-row:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dash-alert-detail-name {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 120px;
+}
+
+.dash-alert-detail-info {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  flex: 1;
+  min-width: 100px;
+}
+
+.dash-alert-detail-amount {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--danger);
+  white-space: nowrap;
+}
+
+.dash-alert-detail-days {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  white-space: nowrap;
+}
+
+.dash-alert-detail-priority {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 100px;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+/* === 4 метрики === */
+
+.dash-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dash-metric-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dash-metric-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dash-metric-icon-premium {
+  background: rgba(1, 87, 92, 0.1);
+  color: var(--pri);
+}
+
+.dash-metric-icon-commission {
+  background: rgba(60, 168, 168, 0.12);
+  color: var(--sec);
+}
+
+.dash-metric-icon-clients {
+  background: rgba(254, 196, 0, 0.15);
+  color: #92400e;
+}
+
+.dash-metric-icon-debt {
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--danger);
+}
+
+.dash-metric-data {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dash-metric-value {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-metric-label {
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+/* === Аналитика === */
+
+.dash-analytics {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.dash-analytics-body {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dash-analytics-block {
+  /* отдельный блок аналитики */
+}
+
+.dash-analytics-subtitle {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: var(--pri);
+  margin-bottom: 10px;
+}
+
+.dash-analytics-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-analytics-thead {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border);
+}
+
+.dash-analytics-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  transition: background 0.15s;
+}
+
+.dash-analytics-row:hover {
+  background: rgba(60, 168, 168, 0.04);
+}
+
+.dash-analytics-row:last-child {
+  border-bottom: none;
+}
+
+.dash-analytics-cell-name {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dash-analytics-empty {
+  color: var(--text-light);
+  font-size: 0.875rem;
+  text-align: center;
+  padding: 20px;
+}
+
+/* === Задачи и ДР === */
+
+.dash-upcoming {
+  margin-bottom: 24px;
+}
+
+.dash-upcoming-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.dash-upcoming-block {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.dash-upcoming-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  color: var(--pri);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.dash-upcoming-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  background: var(--sec);
+  color: #fff;
+  padding: 1px 7px;
+  border-radius: 100px;
+}
+
+.dash-upcoming-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dash-upcoming-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+  gap: 8px;
+}
+
+.dash-upcoming-item:hover {
+  background: rgba(60, 168, 168, 0.04);
+}
+
+.dash-upcoming-item-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  color: var(--sec);
+}
+
+.dash-upcoming-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dash-upcoming-item-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-upcoming-item-sub {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+.dash-upcoming-item-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dash-upcoming-priority {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 100px;
+  text-transform: uppercase;
+}
+
+.priority-h {
+  background: #fef2f2;
+  color: var(--danger);
+}
+
+.priority-m {
+  background: #fef9e7;
+  color: #92400e;
+}
+
+.priority-l {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.dash-upcoming-item-date {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  white-space: nowrap;
+}
+
+.dash-upcoming-item-days {
+  font-size: 0.75rem;
+  color: var(--sec);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dash-upcoming-empty {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  text-align: center;
+  padding: 30px 10px;
+}
+
+/* === Адаптивность === */
+
+@media (max-width: 900px) {
+  .dash-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dash-upcoming-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .dash-page {
+    padding: 16px;
+  }
+
+  .dash-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dash-header-controls {
+    width: 100%;
+  }
+
+  .dash-search {
+    flex: 1;
+  }
+
+  .dash-search input {
+    width: 100%;
+  }
+
+  .dash-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-analytics-thead,
+  .dash-analytics-row {
+    grid-template-columns: 2fr 0.8fr 1fr 1fr;
+    font-size: 0.75rem;
+  }
+}
