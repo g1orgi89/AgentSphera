@@ -202,31 +202,44 @@
 - [ ] Сводка месяца
 - [ ] Детали дня
 
-### 4.5 Экспорт CSV
+### 4.5 Экспорт Excel
 - Файлы: `server/src/routes/export.js`
 - Секция MASTER.md: 3 (Export API)
-- [ ] GET /export/csv → файл с BOM для Excel
+- [ ] GET /export/xlsx → файл .xlsx через exceljs
 - [ ] Кнопка на странице клиентов и договоров
 
 ---
 
 ## Фаза 5 — Акты, Дашборд
 
-### 5.1 Модель Act + API
+### 5.1 Модель Act + API + Умный парсинг
 - Файлы: `server/src/models/Act.js`, `server/src/routes/acts.js`, `server/src/services/actService.js`
 - Секция MASTER.md: 2 (Act), 3 (Acts API), 5 (сверка)
-- [ ] POST /acts — ручной ввод, автосверка при сохранении
-- [ ] POST /acts/upload — парсинг Excel (xlsx на сервере)
-- [ ] GET /acts
-- [ ] DELETE /acts/:id
+- Новые пакеты: `@anthropic-ai/sdk`, `multer`, `pdf-parse`
+- Переменная окружения: `ANTHROPIC_API_KEY` в .env
+- [ ] Модель Act.js (схема с source: 'excel'|'pdf'|'csv'|'manual', originalFileName)
+- [ ] multer middleware: загрузка файлов (max 5MB, .xlsx/.xls/.csv/.pdf), сохранение в память (memoryStorage)
+- [ ] Утилита extractTextFromFile: Excel → exceljs → текст, PDF → pdf-parse → текст, CSV → чтение utf-8
+- [ ] Утилита parseWithClaude: отправка текста в Anthropic API → получение JSON [{contractNumber, clientName, amount}]
+- [ ] Утилита reconcileItems: сверка массива items с базой Contract по номеру → статусы ok/diff/unknown
+- [ ] POST /acts — ручной ввод + автосверка
+- [ ] POST /acts/upload — загрузка файла → extractText → parseWithClaude → reconcile → возврат items (без сохранения)
+- [ ] POST /acts/save — сохранение провалидированного акта после предпросмотра
+- [ ] GET /acts — список актов пользователя
+- [ ] DELETE /acts/:id — удалить акт
+- [ ] Обновить app.js — заменить заглушку acts на реальный роут
+- [ ] Обновить .env.example — добавить ANTHROPIC_API_KEY
 
 ### 5.2 Страница актов
-- Файлы: `client/src/pages/Acts.jsx`
+- Файлы: `client/src/pages/Acts.jsx`, `client/src/pages/Acts.css`
 - Секция MASTER.md: 4.9
-- [ ] Загрузка Excel
-- [ ] Ручной ввод
-- [ ] Таблица результатов
-- [ ] Статусы: совпадает/расхождение/не найден
+- [ ] Зона загрузки файла (drag&drop + кнопка), форматы: Excel, PDF, CSV
+- [ ] Поля: СК (company), период (period)
+- [ ] Индикатор обработки (AI парсит)
+- [ ] Предпросмотр распознанных строк: таблица с contractNumber, clientName, amount, status — редактируемые ячейки
+- [ ] Кнопка «Сохранить акт» (POST /acts/save)
+- [ ] Ручной ввод через форму (альтернатива загрузке)
+- [ ] Статусы: совпадает / расхождение / не найден (цветовая индикация)
 - [ ] Список сохранённых актов
 
 ### 5.3 Dashboard API
@@ -270,7 +283,7 @@
 - [ ] Глобальный error handler
 - [ ] Toast для уведомлений (успех/ошибка)
 - [ ] 404 страница
-- [ ] Загрузка файлов: max 5MB, только xlsx/xls/csv (multer)
+- [ ] Загрузка файлов: max 5MB, только xlsx/xls/csv/pdf (multer)
 
 ### 6.4 Мягкое удаление и бэкапы
 - Файлы: обновить модели Client, Contract — добавить `deletedAt`
@@ -305,4 +318,4 @@
 
 ---
 
-*Версия: 1.0 | Задач: ~40 | Дата: 21.03.2026*
+*Версия: 1.1 | Задач: ~40 | Дата: 22.03.2026*

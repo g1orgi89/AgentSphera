@@ -1,4 +1,4 @@
-# MASTER.md — АгентСфера v1.0
+# MASTER.md — АгентСфера v1.1
 
 > Полная спецификация продакшен-версии. Единственный источник правды по архитектуре, API, схемам и бизнес-логике.
 
@@ -18,7 +18,9 @@
 | База данных | MongoDB 7 / Mongoose |
 | Фронтенд | React 18 (Vite) |
 | Авторизация | JWT (access + refresh tokens) |
-| CSS | CSS Modules или Tailwind (решим на старте) |
+| AI-парсинг | Anthropic Claude API (@anthropic-ai/sdk) |
+| Экспорт | exceljs (.xlsx) |
+| CSS | CSS-переменные из брендбука VP |
 | Деплой | VPS (Contabo), nginx reverse proxy |
 | Репозиторий | GitHub: github.com/g1orgi89/AgentSphera (монорепо) |
 
@@ -195,11 +197,12 @@ else → 'active'
   company: String,        // СК
   period: String,         // свободная форма: "Янв 2025", "Q1 2025"
   date: Date,             // дата загрузки
-  source: String,         // 'excel' | 'manual'
+  source: String,         // 'excel' | 'pdf' | 'csv' | 'manual'
+  originalFileName: String, // имя загруженного файла (если source !== 'manual')
   items: [{
     contractNumber: String,
     clientName: String,
-    expectedAmount: Number,  // рассчитанная КВ
+    expectedAmount: Number,  // рассчитанная КВ из базы
     actualAmount: Number,    // фактическая из акта
     status: String           // 'ok' | 'diff' | 'unknown'
   }],
@@ -270,9 +273,27 @@ else → 'active'
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | /acts | Список актов |
-| POST | /acts | Создать (ручной ввод) |
-| POST | /acts/upload | Загрузить Excel и распарсить |
+| POST | /acts | Создать (ручной ввод), автосверка при сохранении |
+| POST | /acts/upload | Умный парсинг файла (Excel/PDF/CSV) через Claude AI + автосверка |
 | DELETE | /acts/:id | Удалить |
+
+#### Умный парсинг (POST /acts/upload)
+
+Поток обработки:
+1. Клиент отправляет файл (multipart/form-data) + поля `company`, `period`
+2. Сервер принимает файл через `multer` (max 5MB, форматы: .xlsx, .xls, .csv, .pdf)
+3. Извлечение текста/данных из файла:
+   - Excel (.xlsx, .xls) → `exceljs` → текст всех ячеек
+   - PDF (.pdf) → `pdf-parse` → текст страниц
+   - CSV (.csv) → чтение как текст (utf-8)
+4. Извлечённый контент отправляется в **Anthropic Claude API** с промптом:
+   - Системный промпт: «Ты парсер актов сверки от страховых компаний. Из документа извлеки строки: номер договора, имя клиента, сумма комиссии. Верни ТОЛЬКО JSON-массив.»
+   - Формат ответа: `[{ "contractNumber": "...", "clientName": "...", "amount": 0 }]`
+5. Сервер парсит JSON-ответ Claude
+6. Для каждой строки — сверка с базой (по номеру договора, case-insensitive)
+7. Возвращает результат: `{ items: [...], source: 'excel'|'pdf'|'csv' }`
+
+Ответ при ошибке парсинга Claude: `{ success: false, error: 'Не удалось распознать данные из файла' }`
 
 ### Dashboard
 
@@ -288,7 +309,7 @@ else → 'active'
 
 | Метод | Путь | Описание |
 |-------|------|----------|
-| GET | /export/csv | Экспорт всех договоров в CSV |
+| GET | /export/xlsx | Экспорт всех договоров в Excel (.xlsx) |
 
 ---
 
@@ -351,10 +372,14 @@ else → 'active'
 - Детали дня по клику
 
 ### 4.9 Акты и сверка (`/acts`) → `Acts.jsx`
-- Загрузка Excel (xlsx.js на клиенте)
-- Ручной ввод через форму
+- Загрузка файла (drag&drop или кнопка). Форматы: Excel (.xlsx, .xls), PDF, CSV
+- Поля при загрузке: СК (company), период (period)
+- Индикатор обработки (AI парсит документ)
+- Предпросмотр распознанных строк (до сохранения) — возможность редактировать
+- Ручной ввод через форму (альтернатива загрузке)
 - Автосверка с базой по номеру договора
 - Статусы: совпадает / расхождение / не найден
+- Кнопка «Сохранить» — сохраняет акт в базу
 - Список сохранённых актов
 
 ---
@@ -379,11 +404,13 @@ else                     → Ожидание (серый)
 ```
 
 ### Сверка акта с базой
-При загрузке акта (Excel или ручной):
-1. Для каждой строки ищем договор по номеру (case-insensitive)
-2. Если найден — сравниваем `actualAmount` с `commissionAmount`
-3. Разница < 1₽ → `ok`, иначе → `diff`
-4. Не найден → `unknown`
+При загрузке акта (файл или ручной ввод):
+1. **Если файл** — извлечь текст (Excel/PDF/CSV), отправить в Claude API, получить JSON-массив строк
+2. **Если ручной ввод** — данные уже структурированы
+3. Для каждой строки ищем договор по номеру (case-insensitive)
+4. Если найден — сравниваем `actualAmount` с `commissionAmount`
+5. Разница < 1₽ → `ok`, иначе → `diff`
+6. Не найден → `unknown`
 
 ### Комиссия
 ```
@@ -446,8 +473,9 @@ commissionType === 'fix' → commissionValue
 - priority: enum ['h', 'm', 'l']
 
 ### Акт
-- items: min 1 элемент
-- каждый item: contractNumber или clientName обязателен
+- company: required (при загрузке файла и ручном вводе)
+- При загрузке файла: max 5MB, допустимые форматы: .xlsx, .xls, .csv, .pdf
+- При ручном вводе: items min 1 элемент, каждый item: contractNumber или clientName обязателен
 
 ---
 
@@ -461,7 +489,8 @@ commissionType === 'fix' → commissionValue
 - CORS: только клиентский домен
 - Helmet.js для HTTP-заголовков
 - Input sanitization: mongo-sanitize
-- Загрузка файлов: max 5MB, только .xlsx/.xls/.csv
+- Загрузка файлов: max 5MB, только .xlsx/.xls/.csv/.pdf (multer)
+- API-ключ Anthropic: хранится в .env на сервере (ANTHROPIC_API_KEY), никогда не передаётся на клиент
 
 ### Бэкапы
 - Ежедневный mongodump → сжатие → копия на внешнее хранилище
@@ -492,4 +521,4 @@ API: api.agentsfera.ru
 
 ---
 
-*Версия: 1.0 | Дата: 21.03.2026*
+*Версия: 1.1 | Дата: 22.03.2026*
