@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useToast } from '../store/ToastContext';
 import TaskForm from '../components/TaskForm';
 import './Tasks.css';
 
@@ -11,9 +12,9 @@ const FILTER_OPTIONS = [
 ];
 
 const SORT_OPTIONS = [
+  { value: 'dueDate', label: 'По дате' },
   { value: '-createdAt', label: 'Новые первые' },
-  { value: 'dueDate', label: 'По сроку' },
-  { value: '-priority', label: 'По приоритету' }
+  { value: 'priority', label: 'По приоритету' }
 ];
 
 const PRIORITY_MAP = {
@@ -22,35 +23,17 @@ const PRIORITY_MAP = {
   l: { label: 'Низкий', className: 'priority-low' }
 };
 
-function formatDate(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function isOverdue(dateStr) {
-  if (!dateStr) return false;
-  const d = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  d.setHours(0, 0, 0, 0);
-  return d < today;
-}
-
 function Tasks() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Фильтры
   const [filter, setFilter] = useState('active');
-  const [sort, setSort] = useState('-createdAt');
-
-  // Пагинация
+  const [sort, setSort] = useState('dueDate');
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
 
-  // Модальная форма
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
@@ -58,9 +41,7 @@ function Tasks() {
     setLoading(true);
     setError('');
     try {
-      const params = { page, limit: 50, sort };
-      if (filter !== 'all') params.filter = filter;
-
+      const params = { filter, sort, page, limit: 20 };
       const res = await api.get('/tasks', { params });
       setTasks(res.data.data);
       setPagination(res.data.pagination);
@@ -85,31 +66,14 @@ function Tasks() {
     setShowForm(true);
   };
 
-  const handleToggle = async (taskId) => {
-    try {
-      const res = await api.patch(`/tasks/${taskId}/toggle`);
-      setTasks(prev => prev.map(t => t._id === taskId ? res.data.data : t));
-    } catch (err) {
-      setError(err.response?.data?.error || 'Ошибка переключения');
-    }
-  };
-
-  const handleDelete = async (taskId) => {
-    if (!window.confirm('Удалить задачу?')) return;
-    try {
-      await api.delete(`/tasks/${taskId}`);
-      fetchTasks(pagination.page);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Ошибка удаления');
-    }
-  };
-
   const handleFormSubmit = async (data) => {
     try {
       if (editingTask) {
         await api.put(`/tasks/${editingTask._id}`, data);
+        toast.success('Задача обновлена');
       } else {
         await api.post('/tasks', data);
+        toast.success('Задача добавлена');
       }
       setShowForm(false);
       setEditingTask(null);
@@ -119,10 +83,53 @@ function Tasks() {
     }
   };
 
-  const handleClientClick = (clientId) => {
-    if (clientId) {
-      navigate(`/clients/${clientId}`);
+  const handleToggle = async (taskId) => {
+    try {
+      const res = await api.patch(`/tasks/${taskId}/toggle`);
+      setTasks(prev => prev.map(t => t._id === taskId ? res.data.data : t));
+      toast.success(res.data.data.done ? 'Задача завершена' : 'Задача возобновлена');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Ошибка переключения');
     }
+  };
+
+  const handleDelete = async (taskId) => {
+    if (!window.confirm('Удалить задачу?')) return;
+    try {
+      await api.delete(`/tasks/${taskId}`);
+      toast.success('Задача удалена');
+      fetchTasks(pagination.page);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Ошибка удаления');
+    }
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('ru-RU', {
+      day: '2-digit', month: '2-digit', year: '2-digit'
+    });
+  };
+
+  const isOverdue = (dateStr) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    d.setHours(0, 0, 0, 0);
+    return d < today;
+  };
+
+  const goToClient = (task) => {
+    const cid = typeof task.clientId === 'object' ? task.clientId?._id : task.clientId;
+    if (cid) navigate(`/clients/${cid}`);
+  };
+
+  const getClientName = (task) => {
+    if (typeof task.clientId === 'object' && task.clientId?.name) {
+      return task.clientId.name;
+    }
+    return null;
   };
 
   return (
@@ -133,7 +140,7 @@ function Tasks() {
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M9 3v12M3 9h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
-          Новая задача
+          Добавить задачу
         </button>
       </div>
 
@@ -149,7 +156,6 @@ function Tasks() {
             </button>
           ))}
         </div>
-
         <select className="tasks-sort" value={sort} onChange={(e) => setSort(e.target.value)}>
           {SORT_OPTIONS.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -164,16 +170,11 @@ function Tasks() {
       ) : tasks.length === 0 ? (
         <div className="tasks-empty">
           <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="16" y="16" width="22" height="22" rx="2" transform="rotate(45 27 27)" fill="var(--sec)" opacity="0.2" />
-            <path d="M24 32l4 4 8-8" stroke="var(--sec)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            <rect x="18" y="22" width="28" height="28" rx="4" stroke="var(--sec)" strokeWidth="2" fill="none" />
+            <rect x="16" y="12" width="32" height="40" rx="3" stroke="var(--sec)" strokeWidth="2" fill="none" opacity="0.3" />
+            <path d="M24 28l5 5 11-11" stroke="var(--sec)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.3" />
           </svg>
           <h3>Нет задач</h3>
-          <p>
-            {filter === 'active' ? 'Все задачи выполнены!' :
-             filter === 'done' ? 'Завершённых задач пока нет' :
-             'Добавьте первую задачу'}
-          </p>
+          <p>{filter === 'done' ? 'Нет завершённых задач' : 'Добавьте первую задачу'}</p>
           {filter !== 'done' && (
             <button className="tasks-empty-btn" onClick={handleCreate}>
               Добавить задачу
@@ -182,24 +183,22 @@ function Tasks() {
         </div>
       ) : (
         <>
-          <div className="tasks-count">
-            Задач: {pagination.total}
-          </div>
+          <div className="tasks-count">Найдено: {pagination.total}</div>
 
           <div className="tasks-list">
             {tasks.map(task => {
               const pri = PRIORITY_MAP[task.priority] || PRIORITY_MAP.m;
               const overdue = !task.done && isOverdue(task.dueDate);
+              const clientName = getClientName(task);
 
               return (
                 <div key={task._id} className={`task-item ${task.done ? 'task-done' : ''}`}>
                   <button
                     className={`task-checkbox ${task.done ? 'checked' : ''}`}
                     onClick={() => handleToggle(task._id)}
-                    title={task.done ? 'Вернуть' : 'Завершить'}
                   >
                     {task.done && (
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                         <path d="M3 7l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
@@ -214,11 +213,10 @@ function Tasks() {
                         {pri.label}
                       </span>
                     </div>
-
                     <div className="task-meta">
                       {task.dueDate && (
                         <span className={`task-date ${overdue ? 'task-date-overdue' : ''}`}>
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                             <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" />
                             <path d="M7 4v3l2 1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
                           </svg>
@@ -226,17 +224,13 @@ function Tasks() {
                           {overdue && ' (просрочено)'}
                         </span>
                       )}
-
-                      {task.clientId && (
-                        <span
-                          className="task-client"
-                          onClick={(e) => { e.stopPropagation(); handleClientClick(task.clientId._id); }}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="7" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2" />
-                            <path d="M3 12c0-2.21 1.79-4 4-4s4 1.79 4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                      {clientName && (
+                        <span className="task-client" onClick={() => goToClient(task)}>
+                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                            <circle cx="7" cy="5" r="3" stroke="currentColor" strokeWidth="1.2" />
+                            <path d="M2 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" strokeWidth="1.2" />
                           </svg>
-                          {task.clientId.name}
+                          {clientName}
                         </span>
                       )}
                     </div>
@@ -244,12 +238,12 @@ function Tasks() {
 
                   <div className="task-actions">
                     <button className="task-action-btn" onClick={() => handleEdit(task)} title="Редактировать">
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M11.5 2.5l2 2L5 13H3v-2l8.5-8.5z" stroke="currentColor" strokeWidth="1.2" fill="none" />
                       </svg>
                     </button>
                     <button className="task-action-btn delete" onClick={() => handleDelete(task._id)} title="Удалить">
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                         <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                       </svg>
                     </button>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useToast } from '../store/ToastContext';
 import ClientCard from '../components/ClientCard';
 import ClientForm from '../components/ClientForm';
 import './Clients.css';
@@ -21,6 +22,7 @@ const SORT_OPTIONS = [
 
 function Clients() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -36,9 +38,6 @@ function Clients() {
   // Модальная форма
   const [showForm, setShowForm] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
-
-  // Предупреждение о дубликате
-  const [warning, setWarning] = useState('');
 
   // Экспорт
   const [exporting, setExporting] = useState(false);
@@ -76,13 +75,11 @@ function Clients() {
 
   const handleCreate = () => {
     setEditingClient(null);
-    setWarning('');
     setShowForm(true);
   };
 
   const handleEdit = (client) => {
     setEditingClient(client);
-    setWarning('');
     setShowForm(true);
   };
 
@@ -92,9 +89,10 @@ function Clients() {
     }
     try {
       await api.delete(`/clients/${clientId}`);
+      toast.success('Клиент удалён');
       fetchClients(pagination.page);
     } catch (err) {
-      setError(err.response?.data?.error || 'Ошибка удаления');
+      toast.error(err.response?.data?.error || 'Ошибка удаления');
     }
   };
 
@@ -102,10 +100,13 @@ function Clients() {
     try {
       if (editingClient) {
         await api.put(`/clients/${editingClient._id}`, data);
+        toast.success('Клиент обновлён');
       } else {
         const res = await api.post('/clients', data);
         if (res.data.warning) {
-          setWarning(res.data.warning);
+          toast.warning(res.data.warning);
+        } else {
+          toast.success('Клиент добавлен');
         }
       }
       setShowForm(false);
@@ -132,8 +133,9 @@ function Clients() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
+      toast.success('Экспорт завершён');
     } catch (err) {
-      setError('Ошибка экспорта');
+      toast.error('Ошибка экспорта');
     } finally {
       setExporting(false);
     }
@@ -164,17 +166,6 @@ function Clients() {
           </button>
         </div>
       </div>
-
-      {warning && (
-        <div className="clients-warning">
-          {warning}
-          <button className="clients-warning-close" onClick={() => setWarning('')}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
-      )}
 
       <div className="clients-toolbar">
         <div className="clients-search">
