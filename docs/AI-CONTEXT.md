@@ -9,11 +9,11 @@
 
 **Что:** CRM для страховых агентов «АгентСфера» (клиенты, договоры, взносы, комиссии, сверка актов)
 **Бренд:** VP страхование
-**Стек:** React 18 (Vite) + Express.js + MongoDB 7 + Mongoose + JWT + nginx
+**Стек:** React 18 (Vite) + Express.js + MongoDB 7 + Mongoose + JWT + nginx + Anthropic Claude API
 **Репозиторий:** github.com/g1orgi89/AgentSphera (монорепо: `server/` + `client/` + `docs/`)
 **Документы в репо:**
-- `docs/MASTER.md` (v1.0) — полная спецификация
-- `docs/STEP-BY-STEP.md` (v1.0) — ~40 задач, 7 фаз
+- `docs/MASTER.md` (v1.1) — полная спецификация
+- `docs/STEP-BY-STEP.md` (v1.1) — ~40 задач, 7 фаз
 - `docs/index.html` — рабочий прототип UI (920+ строк)
 - `docs/ROADMAP.md` — высокоуровневый план
 
@@ -21,11 +21,11 @@
 
 ## ТЕКУЩИЙ СТАТУС
 
-**Фаза:** 4 (задачи, календарь, экспорт) — ЗАВЕРШЕНА
-**Последняя задача:** 4.5 (Экспорт Excel) — ГОТОВО
-**Следующая задача:** 5.1 (Модель Act + API)
+**Фаза:** 5 (акты, дашборд) — в процессе
+**Последняя задача:** 5.1 (Модель Act + API + умный парсинг) — ГОТОВО
+**Следующая задача:** 5.2 (Страница актов)
 **Блокеры:** нет
-**Тестирование:** 4.5 (Экспорт Excel) — ожидает тестирования. Календарь (4.4) — ожидает тестирования.
+**Тестирование:** 5.1 — ожидает тестирования (нужен ANTHROPIC_API_KEY в .env). 4.5 (Экспорт Excel) — протестирован, OK.
 
 ---
 
@@ -54,8 +54,9 @@
 - [x] 4.1 — Модель Task + API: Task.js, taskService.js, routes/tasks.js (5 эндпоинтов)
 - [x] 4.2 — Страница задач: Tasks.jsx + Tasks.css, TaskForm.jsx (fixedClient prop)
 - [x] 4.3 — Задачи в карточке клиента: ClientDetail.jsx (fixedClient={client}), ClientDetail.css (cd-task-*)
-- [x] 4.4 — Календарь: Calendar.jsx + Calendar.css (месячный вид 7-колоночной сеткой, навигация prev/next/сегодня, 4 типа событий из 3 API: задачи по dueDate, окончания договоров по endDate, взносы по installments[].dueDate, ДР по birthday+month, ромбовые маркеры цветами pri/danger/warning/sec, сводка месяца с подсчётами, детали дня по клику с бейджами типов и ссылками на клиентов, адаптив)
-- [x] 4.5 — Экспорт Excel: server/src/routes/export.js (GET /export/xlsx через exceljs, стилизованная шапка #01575C, автофильтр, закреплённая строка, чередование цветов строк, числовой формат), кнопки «Excel» на страницах клиентов и договоров (axios blob download)
+- [x] 4.4 — Календарь: Calendar.jsx + Calendar.css (месячный вид, 4 типа событий, ромбовые маркеры, сводка, детали дня)
+- [x] 4.5 — Экспорт Excel: export.js (GET /export/xlsx, exceljs, стилизация, итого, границы), кнопки на страницах
+- [x] 5.1 — Модель Act + API + умный парсинг: Act.js (схема с source excel/pdf/csv/manual, originalFileName), actService.js (extractTextFromFile: Excel→exceljs, PDF→pdf-parse, CSV→utf-8; parseWithClaude: Anthropic SDK → JSON [{contractNumber, clientName, amount}]; reconcileItems: сверка с Contract по номеру, статусы ok/diff/unknown), routes/acts.js (GET /acts, POST /acts — ручной ввод + автосверка, POST /acts/upload — multer memoryStorage 5MB + extractText + Claude AI + reconcile → предпросмотр без сохранения, DELETE /acts/:id). Пакеты: @anthropic-ai/sdk, multer, pdf-parse. Переменная: ANTHROPIC_API_KEY.
 
 **Прототип:** завершён, согласован.
 **Правка вне спеки:** ClientPicker — при фокусе показывает всех клиентов, фильтрация при вводе (по просьбе заказчика).
@@ -64,7 +65,7 @@
 
 ## ПРОШЛАЯ СЕССИЯ
 
-_22.03.2026 — Задача 4.5. Экспорт изменён с CSV на Excel (.xlsx) по согласованию с заказчиком. Добавлен пакет exceljs в server/package.json. Создан server/src/routes/export.js — GET /export/xlsx: загрузка всех договоров пользователя с populate clientId, генерация .xlsx (16 колонок: клиент, телефон, email, СК, тип, №, объект, даты, статус, премия, КВ тип/значение/сумма, взносы, заметка), стилизация шапки (цвет #01575C, белый текст, bold), чередование цветов строк, числовой формат для сумм, автофильтр, закреплённая шапка. Обновлён app.js — заменена заглушка export на реальный роут. Обновлены Clients.jsx и Contracts.jsx — добавлена кнопка «Excel» (outline-стиль, SVG-иконка скачивания, axios blob + createObjectURL). Добавлен CSS: .clients-export-btn, .contracts-export-btn, .clients-header-actions, .contracts-header-actions. Далее: 5.1 (Модель Act + API)._
+_22.03.2026 — Задачи 4.5 и 5.1. Задача 4.5: Экспорт Excel через exceljs (export.js, кнопки на клиентах/договорах), fix виртуальных полей и строки Итого. Задача 5.1: Модель Act (source: excel/pdf/csv/manual, originalFileName, items с ok/diff/unknown). Сервис actService.js: extractTextFromFile (Excel через exceljs, PDF через pdf-parse, CSV как utf-8), parseWithClaude (Anthropic SDK, claude-sonnet-4-20250514, системный промпт для парсинга актов → JSON-массив), reconcileItems (поиск Contract по номеру case-insensitive, сравнение commissionAmount с actualAmount, diff < 1 → ok), detectSource. Роуты acts.js: multer memoryStorage (5MB, .xlsx/.xls/.pdf/.csv), GET / (список), POST / (создание + автосверка), POST /upload (парсинг файла через Claude → предпросмотр без сохранения), DELETE /:id. Обновлён app.js (заглушка acts → реальный роут), package.json (+@anthropic-ai/sdk, multer, pdf-parse), .env.example (+ANTHROPIC_API_KEY). Также обновлены MASTER.md v1.1 и STEP-BY-STEP.md v1.1 — зафиксирован умный парсинг. Далее: 5.2 (Страница актов)._
 
 ---
 
@@ -86,6 +87,8 @@ _22.03.2026 — Задача 4.5. Экспорт изменён с CSV на Exce
 | 21.03.2026 | Задачи клиента: fetch всех + фильтр на клиенте | API не поддерживает фильтр по clientId, аналогично договорам |
 | 21.03.2026 | Календарь: сборка событий из 3 API на клиенте | Нет отдельного calendar API, данные агрегируются на фронтенде |
 | 22.03.2026 | Экспорт в Excel (.xlsx) вместо CSV | Согласовано с заказчиком. Пакет exceljs. Эндпоинт /export/xlsx вместо /export/csv |
+| 22.03.2026 | Умный парсинг актов через Claude AI | Согласовано с заказчиком. Каждая СК шлёт в своём формате — Claude универсально парсит. Форматы: Excel, PDF, CSV. Обработка на сервере (API-ключ не утекает). Пакеты: @anthropic-ai/sdk, multer, pdf-parse |
+| 22.03.2026 | POST /acts/upload возвращает предпросмотр без сохранения | Пользователь может проверить и отредактировать распознанные данные перед сохранением |
 
 ---
 
