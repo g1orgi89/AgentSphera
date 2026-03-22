@@ -94,6 +94,7 @@
   font-weight: 700;
   white-space: nowrap;
   transition: all 0.15s;
+  position: relative;
 }
 
 .sidebar-nav-item:hover {
@@ -118,10 +119,6 @@
   border-radius: 0 3px 3px 0;
 }
 
-.sidebar-nav-item {
-  position: relative;
-}
-
 .sidebar-nav-item svg {
   flex-shrink: 0;
 }
@@ -133,19 +130,21 @@
 }
 
 .sidebar-collapsed .sidebar-top {
-  justify-content: center;
-  padding: 16px 8px 12px;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 8px 8px;
+  gap: 4px;
 }
 
 .sidebar-collapsed .sidebar-collapse-btn {
-  position: absolute;
-  right: -12px;
-  top: 20px;
-  background: var(--pri);
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  box-shadow: var(--shadow);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-collapsed .sidebar-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* === Нижняя часть === */
@@ -275,8 +274,9 @@
   }
 
   .sidebar-top {
-    justify-content: center;
-    padding: 16px 8px 12px;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 8px 8px;
   }
 
   .sidebar-collapse-btn {
