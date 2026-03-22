@@ -12,6 +12,7 @@ import Contracts from './pages/Contracts';
 import Tasks from './pages/Tasks';
 import Calendar from './pages/Calendar';
 import Acts from './pages/Acts';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
       <Route path="/acts" element={
         <ProtectedRoute><Layout><Acts /></Layout></ProtectedRoute>
       } />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

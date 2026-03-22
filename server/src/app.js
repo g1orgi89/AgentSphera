@@ -69,19 +69,69 @@ app.get('/api/health', (req, res) => {
   res.json({ success: true, data: 'OK' });
 });
 
-// --- 404 ---
+// --- 404 — API-маршрут не найден ---
 
-app.use((req, res) => {
-  res.status(404).json({ success: false, error: 'Маршрут не найден' });
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, error: `Маршрут ${req.method} ${req.originalUrl} не найден` });
 });
 
-// --- Обработка ошибок ---
+// --- Глобальный обработчик ошибок ---
 
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.statusCode || 500).json({
+  console.error('[Ошибка]', err.name, err.message);
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(err.stack);
+  }
+
+  let statusCode = err.statusCode || 500;
+  let message = err.message || 'Внутренняя ошибка сервера';
+
+  // Mongoose: ошибка валидации
+  if (err.name === 'ValidationError') {
+    statusCode = 400;
+    const messages = Object.values(err.errors).map(e => e.message);
+    message = messages.join('. ');
+  }
+
+  // Mongoose: неверный ObjectId
+  if (err.name === 'CastError' && err.kind === 'ObjectId') {
+    statusCode = 400;
+    message = 'Неверный формат ID';
+  }
+
+  // MongoDB: дубликат уникального поля
+  if (err.code === 11000) {
+    statusCode = 400;
+    const field = Object.keys(err.keyValue || {}).join(', ');
+    message = `Значение поля ${field} уже существует`;
+  }
+
+  // JWT: неверный токен
+  if (err.name === 'JsonWebTokenError') {
+    statusCode = 401;
+    message = 'Неверный токен';
+  }
+
+  // JWT: токен истёк
+  if (err.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Токен истёк';
+  }
+
+  // Multer: файл слишком большой
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    statusCode = 400;
+    message = 'Файл слишком большой (максимум 5MB)';
+  }
+
+  // В продакшене не показываем детали 500-ых ошибок
+  if (statusCode === 500 && process.env.NODE_ENV === 'production') {
+    message = 'Внутренняя ошибка сервера';
+  }
+
+  res.status(statusCode).json({
     success: false,
-    error: err.message || 'Внутренняя ошибка сервера'
+    error: message
   });
 });
 
