@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
 
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -19,25 +20,25 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={
-        <ProtectedRoute><Dashboard /></ProtectedRoute>
+        <ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>
       } />
       <Route path="/clients" element={
-        <ProtectedRoute><Clients /></ProtectedRoute>
+        <ProtectedRoute><Layout><Clients /></Layout></ProtectedRoute>
       } />
       <Route path="/clients/:id" element={
-        <ProtectedRoute><ClientDetail /></ProtectedRoute>
+        <ProtectedRoute><Layout><ClientDetail /></Layout></ProtectedRoute>
       } />
       <Route path="/contracts" element={
-        <ProtectedRoute><Contracts /></ProtectedRoute>
+        <ProtectedRoute><Layout><Contracts /></Layout></ProtectedRoute>
       } />
       <Route path="/tasks" element={
-        <ProtectedRoute><Tasks /></ProtectedRoute>
+        <ProtectedRoute><Layout><Tasks /></Layout></ProtectedRoute>
       } />
       <Route path="/calendar" element={
-        <ProtectedRoute><Calendar /></ProtectedRoute>
+        <ProtectedRoute><Layout><Calendar /></Layout></ProtectedRoute>
       } />
       <Route path="/acts" element={
-        <ProtectedRoute><Acts /></ProtectedRoute>
+        <ProtectedRoute><Layout><Acts /></Layout></ProtectedRoute>
       } />
     </Routes>
   );
