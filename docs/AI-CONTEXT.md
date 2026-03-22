@@ -22,10 +22,10 @@
 ## ТЕКУЩИЙ СТАТУС
 
 **Фаза:** 5 (акты, дашборд) — в процессе
-**Последняя задача:** 5.1 (Модель Act + API + умный парсинг) — ГОТОВО
-**Следующая задача:** 5.2 (Страница актов)
+**Последняя задача:** 5.2 (Страница актов) — ГОТОВО
+**Следующая задача:** 5.3 (Dashboard API)
 **Блокеры:** нет
-**Тестирование:** 5.1 — ожидает тестирования (нужен ANTHROPIC_API_KEY в .env). 4.5 (Экспорт Excel) — протестирован, OK.
+**Тестирование:** 5.1 + 5.2 (Акты) — ожидает тестирования (нужен ANTHROPIC_API_KEY в .env). 4.5 (Экспорт Excel) — протестирован, OK.
 
 ---
 
@@ -56,7 +56,8 @@
 - [x] 4.3 — Задачи в карточке клиента: ClientDetail.jsx (fixedClient={client}), ClientDetail.css (cd-task-*)
 - [x] 4.4 — Календарь: Calendar.jsx + Calendar.css (месячный вид, 4 типа событий, ромбовые маркеры, сводка, детали дня)
 - [x] 4.5 — Экспорт Excel: export.js (GET /export/xlsx, exceljs, стилизация, итого, границы), кнопки на страницах
-- [x] 5.1 — Модель Act + API + умный парсинг: Act.js (схема с source excel/pdf/csv/manual, originalFileName), actService.js (extractTextFromFile: Excel→exceljs, PDF→pdf-parse, CSV→utf-8; parseWithClaude: Anthropic SDK → JSON [{contractNumber, clientName, amount}]; reconcileItems: сверка с Contract по номеру, статусы ok/diff/unknown), routes/acts.js (GET /acts, POST /acts — ручной ввод + автосверка, POST /acts/upload — multer memoryStorage 5MB + extractText + Claude AI + reconcile → предпросмотр без сохранения, DELETE /acts/:id). Пакеты: @anthropic-ai/sdk, multer, pdf-parse. Переменная: ANTHROPIC_API_KEY.
+- [x] 5.1 — Модель Act + API + умный парсинг: Act.js, actService.js (extractText, parseWithClaude, reconcileItems), routes/acts.js (GET, POST, POST /upload, DELETE). Пакеты: @anthropic-ai/sdk, multer, pdf-parse
+- [x] 5.2 — Страница актов: Acts.jsx + Acts.css. Два режима: загрузка файла (drag&drop + кнопка, форматы Excel/PDF/CSV, индикатор AI-обработки со спиннером, предпросмотр с редактируемыми ячейками и статусами ok/diff/unknown, сводка совпадений, кнопки «Отмена»/«Сохранить акт») и ручной ввод (динамическая таблица, добавление/удаление строк, кнопка «Сверить и сохранить»). Общие поля: СК + период. Список сохранённых актов: карточки с раскрытием (chevron), сводка статусов, детали в таблице, удаление. Адаптив.
 
 **Прототип:** завершён, согласован.
 **Правка вне спеки:** ClientPicker — при фокусе показывает всех клиентов, фильтрация при вводе (по просьбе заказчика).
@@ -65,7 +66,7 @@
 
 ## ПРОШЛАЯ СЕССИЯ
 
-_22.03.2026 — Задачи 4.5 и 5.1. Задача 4.5: Экспорт Excel через exceljs (export.js, кнопки на клиентах/договорах), fix виртуальных полей и строки Итого. Задача 5.1: Модель Act (source: excel/pdf/csv/manual, originalFileName, items с ok/diff/unknown). Сервис actService.js: extractTextFromFile (Excel через exceljs, PDF через pdf-parse, CSV как utf-8), parseWithClaude (Anthropic SDK, claude-sonnet-4-20250514, системный промпт для парсинга актов → JSON-массив), reconcileItems (поиск Contract по номеру case-insensitive, сравнение commissionAmount с actualAmount, diff < 1 → ok), detectSource. Роуты acts.js: multer memoryStorage (5MB, .xlsx/.xls/.pdf/.csv), GET / (список), POST / (создание + автосверка), POST /upload (парсинг файла через Claude → предпросмотр без сохранения), DELETE /:id. Обновлён app.js (заглушка acts → реальный роут), package.json (+@anthropic-ai/sdk, multer, pdf-parse), .env.example (+ANTHROPIC_API_KEY). Также обновлены MASTER.md v1.1 и STEP-BY-STEP.md v1.1 — зафиксирован умный парсинг. Далее: 5.2 (Страница актов)._
+_22.03.2026 — Задачи 4.5, 5.1, 5.2. Задача 4.5: Экспорт Excel (export.js, кнопки). Задача 5.1: Act.js, actService.js (extractText/parseWithClaude/reconcileItems), routes/acts.js, пакеты @anthropic-ai/sdk + multer + pdf-parse, ANTHROPIC_API_KEY. Задача 5.2: Acts.jsx + Acts.css — полная страница актов: два режима (загрузка файла с drag&drop и AI-парсинг через Claude, ручной ввод через динамическую таблицу), общие поля СК+период, предпросмотр распознанных данных (редактируемые ячейки, статусы ok/diff/unknown, сводка, удаление строк), сохранение через POST /acts, список сохранённых актов (раскрываемые карточки, таблица деталей, удаление). Обновлены MASTER.md v1.1, STEP-BY-STEP.md v1.1. Далее: 5.3 (Dashboard API)._
 
 ---
 
