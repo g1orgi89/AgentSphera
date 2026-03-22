@@ -63,14 +63,6 @@ function IconActs() {
   );
 }
 
-function IconCollapse() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 function IconLogout() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -115,7 +107,7 @@ function getInitials(name) {
   return parts[0][0].toUpperCase();
 }
 
-function Sidebar({ collapsed, onToggle }) {
+function Sidebar({ collapsed }) {
   const { user, logout } = useAuth();
 
   return (
@@ -123,13 +115,6 @@ function Sidebar({ collapsed, onToggle }) {
       {/* Логотип */}
       <div className="sidebar-top">
         <Logo collapsed={collapsed} />
-        <button
-          className={`sidebar-collapse-btn ${collapsed ? 'sidebar-collapse-btn-rotated' : ''}`}
-          onClick={onToggle}
-          title={collapsed ? 'Развернуть' : 'Свернуть'}
-        >
-          <IconCollapse />
-        </button>
       </div>
 
       {/* Навигация */}

@@ -19,14 +19,12 @@
   width: 68px;
 }
 
-/* === Верхняя часть: лого + сворачивание === */
+/* === Верхняя часть: лого === */
 
 .sidebar-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px 14px 12px;
-  gap: 8px;
+  padding: 20px 14px 16px;
   min-height: 64px;
 }
 
@@ -49,26 +47,9 @@
   text-overflow: ellipsis;
 }
 
-.sidebar-collapse-btn {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  padding: 4px;
-  display: flex;
-  align-items: center;
+.sidebar-collapsed .sidebar-top {
   justify-content: center;
-  border-radius: 6px;
-  flex-shrink: 0;
-  transition: all 0.2s;
-}
-
-.sidebar-collapse-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.sidebar-collapse-btn-rotated {
-  transform: rotate(180deg);
+  padding: 20px 8px 16px;
 }
 
 /* === Навигация === */
@@ -127,24 +108,6 @@
 .sidebar-collapsed .sidebar-nav-item {
   justify-content: center;
   padding: 10px;
-}
-
-.sidebar-collapsed .sidebar-top {
-  flex-direction: column;
-  align-items: center;
-  padding: 16px 8px 8px;
-  gap: 4px;
-}
-
-.sidebar-collapsed .sidebar-collapse-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.sidebar-collapsed .sidebar-collapse-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
 }
 
 /* === Нижняя часть === */
@@ -241,6 +204,7 @@
 .layout {
   display: flex;
   min-height: 100vh;
+  position: relative;
 }
 
 .layout-content {
@@ -252,6 +216,38 @@
 
 .layout-content-collapsed {
   margin-left: 68px;
+}
+
+/* === Кнопка сворачивания на границе === */
+
+.layout-toggle-btn {
+  position: fixed;
+  left: 228px;
+  top: 28px;
+  z-index: 101;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  transition: left 0.25s ease, color 0.15s, border-color 0.15s, transform 0.2s;
+}
+
+.layout-toggle-btn:hover {
+  color: var(--pri);
+  border-color: var(--sec);
+}
+
+.layout-toggle-btn-collapsed {
+  left: 56px;
+  transform: rotate(180deg);
 }
 
 /* === Адаптивность === */
@@ -274,13 +270,8 @@
   }
 
   .sidebar-top {
-    flex-direction: column;
-    align-items: center;
-    padding: 16px 8px 8px;
-  }
-
-  .sidebar-collapse-btn {
-    display: none;
+    justify-content: center;
+    padding: 20px 8px 16px;
   }
 
   .sidebar-user {
@@ -295,5 +286,9 @@
   .layout-content,
   .layout-content-collapsed {
     margin-left: 68px;
+  }
+
+  .layout-toggle-btn {
+    display: none;
   }
 }
