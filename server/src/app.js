@@ -16,6 +16,7 @@ const { clientNotesRouter, notesRouter } = require('./routes/notes');
 const contractRoutes = require('./routes/contracts');
 const taskRoutes = require('./routes/tasks');
 const exportRoutes = require('./routes/export');
+const actRoutes = require('./routes/acts');
 
 const app = express();
 
@@ -58,12 +59,9 @@ app.use('/api/v1/notes', notesRouter);
 app.use('/api/v1/contracts', contractRoutes);
 app.use('/api/v1/tasks', taskRoutes);
 app.use('/api/v1/export', exportRoutes);
+app.use('/api/v1/acts', actRoutes);
 
 // --- Заглушки (будут заменены) ---
-
-app.use('/api/v1/acts', (req, res) => {
-  res.json({ success: true, data: 'acts route — заглушка' });
-});
 
 app.use('/api/v1/dashboard', (req, res) => {
   res.json({ success: true, data: 'dashboard route — заглушка' });
