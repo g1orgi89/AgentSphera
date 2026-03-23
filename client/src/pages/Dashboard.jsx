@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { BurgerButton } from '../components/Layout';
 import './Dashboard.css';
 
 const PERIOD_OPTIONS = [
@@ -207,6 +208,7 @@ function Dashboard() {
     <div className="dash-page">
       {/* === Заголовок === */}
       <div className="dash-header">
+        <BurgerButton />
         <h1>Дашборд</h1>
         <div className="dash-header-controls">
           <form className="dash-search" onSubmit={handleSearch}>
