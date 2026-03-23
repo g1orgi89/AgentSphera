@@ -369,9 +369,9 @@ th.sorted .sort-arrow {
   color: var(--pri);
 }
 
-/* Мобильная строка итогов */
+/* === Мобильные карточки (скрыты на десктопе) === */
 
-.contracts-mobile-totals {
+.contracts-cards {
   display: none;
 }
 
@@ -484,24 +484,144 @@ th.sorted .sort-arrow {
     margin: 8px 12px;
   }
 
-  /* Таблица прокручивается горизонтально */
+  /* Скрываем таблицу, показываем карточки */
   .contracts-table-wrap {
-    margin: 0 12px;
-    border-radius: 14px;
-    -webkit-overflow-scrolling: touch;
+    display: none;
   }
 
-  .contracts-table {
+  .contracts-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  /* Мобильная строка итогов */
+  .contracts-mobile-totals {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: var(--pri);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 4px;
+  }
+
+  .contracts-mobile-totals-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .contracts-mobile-totals-label {
+    font-size: 0.625rem;
+    color: rgba(255, 255, 255, 0.65);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 700;
+  }
+
+  .contracts-mobile-totals-value {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+    font-family: var(--font-heading);
+  }
+
+  .contracts-mobile-totals-kv .contracts-mobile-totals-value {
+    color: var(--acc);
+  }
+
+  /* Карточка договора */
+  .contracts-card {
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .contracts-card:active {
+    background: rgba(60, 168, 168, 0.04);
+  }
+
+  .contracts-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    gap: 8px;
+  }
+
+  .contracts-card-company {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--text);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .contracts-card-dot {
+    color: var(--text-light);
+    flex-shrink: 0;
+  }
+
+  .contracts-card-client {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 8px;
+    min-width: 0;
+  }
+
+  .contracts-card-client-name {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--pri);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .contracts-card-number {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    white-space: nowrap;
+  }
+
+  .contracts-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .contracts-card-money {
+    display: flex;
+    gap: 12px;
     font-size: 0.75rem;
   }
 
-  .contracts-table th {
-    padding: 8px 6px;
-    font-size: 0.65rem;
+  .contracts-card-premium {
+    font-weight: 700;
+    color: var(--text);
   }
 
-  .contracts-table td {
-    padding: 8px 6px;
+  .contracts-card-kv {
+    font-weight: 700;
+    color: var(--sec);
+  }
+
+  .contracts-card-inst {
+    font-size: 0.7rem;
+    color: var(--text-light);
+    font-weight: 600;
+    white-space: nowrap;
   }
 
   .contracts-empty {
@@ -510,5 +630,12 @@ th.sorted .sort-arrow {
 
   .contracts-pagination {
     padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contracts-card-money {
+    flex-direction: column;
+    gap: 2px;
   }
 }
