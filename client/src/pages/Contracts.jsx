@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useToast } from '../store/ToastContext';
 import ContractForm from '../components/ContractForm';
+import ImportModal from '../components/ImportModal';
 import './Contracts.css';
 
 const STATUS_LABELS = {
@@ -41,6 +43,7 @@ const OBJECT_LABELS = {
 
 function Contracts() {
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [contracts, setContracts] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
@@ -57,11 +60,10 @@ function Contracts() {
   const [page, setPage] = useState(1);
 
   const [showForm, setShowForm] = useState(false);
-
-  // Экспорт
+  const [showImport, setShowImport] = useState(false);
+  const [showExcelMenu, setShowExcelMenu] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  // Уникальные значения для фильтров
   const [companies, setCompanies] = useState([]);
   const [types, setTypes] = useState([]);
 
@@ -96,7 +98,6 @@ function Contracts() {
     }
   }, [search, filterCompany, filterType, filterObjectType, filterStatus, sort, page]);
 
-  // Загрузка уникальных значений для фильтров
   useEffect(() => {
     const loadFilterOptions = async () => {
       try {
@@ -104,9 +105,7 @@ function Contracts() {
         const all = res.data.data || [];
         setCompanies([...new Set(all.map(c => c.company).filter(Boolean))].sort());
         setTypes([...new Set(all.map(c => c.type).filter(Boolean))].sort());
-      } catch {
-        // Не критично
-      }
+      } catch {}
     };
     loadFilterOptions();
   }, []);
@@ -115,7 +114,6 @@ function Contracts() {
     fetchContracts();
   }, [fetchContracts]);
 
-  // Дебаунс поиска
   const [searchInput, setSearchInput] = useState('');
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -126,13 +124,9 @@ function Contracts() {
   }, [searchInput]);
 
   const handleSort = (key) => {
-    if (sort === key) {
-      setSort(`-${key}`);
-    } else if (sort === `-${key}`) {
-      setSort('-createdAt');
-    } else {
-      setSort(key);
-    }
+    if (sort === key) setSort(`-${key}`);
+    else if (sort === `-${key}`) setSort('-createdAt');
+    else setSort(key);
     setPage(1);
   };
 
@@ -144,12 +138,14 @@ function Contracts() {
 
   const handleContractSubmit = async (payload) => {
     await api.post('/contracts', payload);
+    toast.success('Договор добавлен');
     setShowForm(false);
     fetchContracts();
   };
 
   const handleExport = async () => {
     setExporting(true);
+    setShowExcelMenu(false);
     try {
       const res = await api.get('/export/xlsx', { responseType: 'blob' });
       const url = window.URL.createObjectURL(res.data);
@@ -160,22 +156,27 @@ function Contracts() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
+      toast.success('Экспорт завершён');
     } catch (err) {
-      setError('Ошибка экспорта');
+      toast.error('Ошибка экспорта');
     } finally {
       setExporting(false);
     }
   };
 
-  // --- Форматирование ---
+  const handleImportClick = () => {
+    setShowExcelMenu(false);
+    setShowImport(true);
+  };
+
+  const handleImportSuccess = () => {
+    toast.success('Импорт завершён');
+    fetchContracts();
+  };
 
   const formatDate = (date) => {
     if (!date) return '—';
-    return new Date(date).toLocaleDateString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit'
-    });
+    return new Date(date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
   };
 
   const formatCurrency = (num) => {
@@ -186,28 +187,19 @@ function Contracts() {
   const getStatusLabel = (contract) => {
     const label = STATUS_LABELS[contract.status] || contract.status;
     if (contract.status && contract.status.startsWith('expiring') && contract.endDate) {
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      const end = new Date(contract.endDate);
-      end.setHours(0, 0, 0, 0);
+      const now = new Date(); now.setHours(0, 0, 0, 0);
+      const end = new Date(contract.endDate); end.setHours(0, 0, 0, 0);
       const days = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
       return `${label} (${days}д)`;
     }
     return label;
   };
 
-  const getClientId = (contract) => {
-    return typeof contract.clientId === 'object' ? contract.clientId._id : contract.clientId;
-  };
-
-  const getClientName = (contract) => {
-    return typeof contract.clientId === 'object' ? contract.clientId.name : '—';
-  };
-
-  const getInstallmentsSummary = (installments) => {
-    if (!installments || installments.length === 0) return '—';
-    const paid = installments.filter(i => i.paid).length;
-    return `${paid}/${installments.length}`;
+  const getClientId = (c) => typeof c.clientId === 'object' ? c.clientId._id : c.clientId;
+  const getClientName = (c) => typeof c.clientId === 'object' ? c.clientId.name : '—';
+  const getInstallmentsSummary = (inst) => {
+    if (!inst || inst.length === 0) return '—';
+    return `${inst.filter(i => i.paid).length}/${inst.length}`;
   };
 
   return (
@@ -215,18 +207,41 @@ function Contracts() {
       <div className="contracts-header">
         <h1>Договоры</h1>
         <div className="contracts-header-actions">
-          <button
-            className="contracts-export-btn"
-            onClick={handleExport}
-            disabled={exporting}
-            title="Экспорт договоров в Excel"
-          >
-            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 12.5v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M9 3v8.5M5.5 8L9 11.5 12.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            {exporting ? 'Экспорт...' : 'Excel'}
-          </button>
+          {/* Excel dropdown */}
+          <div className="contracts-excel-wrap">
+            <button
+              className="contracts-export-btn"
+              onClick={() => setShowExcelMenu(!showExcelMenu)}
+              disabled={exporting}
+            >
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 12.5v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M9 3v8.5M5.5 8L9 11.5 12.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {exporting ? 'Экспорт...' : 'Excel'}
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            {showExcelMenu && (
+              <div className="contracts-excel-menu">
+                <button className="contracts-excel-menu-item" onClick={handleImportClick}>
+                  <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 14.5V6M5.5 10L9 6.5 12.5 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M3 3.5v-1a1 1 0 011-1h10a1 1 0 011 1v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Импорт из Excel
+                </button>
+                <button className="contracts-excel-menu-item" onClick={handleExport}>
+                  <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 3v8.5M5.5 8L9 11.5 12.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M3 14.5v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Экспорт в Excel
+                </button>
+              </div>
+            )}
+          </div>
           <button className="contracts-add-btn" onClick={() => setShowForm(true)}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -285,14 +300,12 @@ function Contracts() {
             <path d="M17 17h14M17 23h14M17 29h10" stroke="var(--sec)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
           </svg>
           <h3>Нет договоров</h3>
-          <p>Добавьте первый договор через карточку клиента или кнопку выше</p>
+          <p>Добавьте договор или импортируйте из Excel</p>
           <button className="contracts-empty-btn" onClick={() => setShowForm(true)}>Добавить договор</button>
         </div>
       ) : (
         <>
-          <div className="contracts-count">
-            Найдено: {pagination.total}
-          </div>
+          <div className="contracts-count">Найдено: {pagination.total}</div>
 
           <div className="contracts-table-wrap">
             <table className="contracts-table">
@@ -306,32 +319,21 @@ function Contracts() {
                       style={!col.sortable ? { cursor: 'default' } : {}}
                     >
                       {col.label}
-                      {col.sortable && (
-                        <span className="sort-arrow">{getSortArrow(col.key)}</span>
-                      )}
+                      {col.sortable && <span className="sort-arrow">{getSortArrow(col.key)}</span>}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {contracts.map(contract => (
-                  <tr
-                    key={contract._id}
-                    onClick={() => navigate(`/clients/${getClientId(contract)}`)}
-                  >
+                  <tr key={contract._id} onClick={() => navigate(`/clients/${getClientId(contract)}`)}>
                     <td className="ct-client">{getClientName(contract)}</td>
                     <td className="ct-company">{contract.company}</td>
                     <td><span className="ct-type">{contract.type}</span></td>
                     <td className="ct-number">{contract.number || '—'}</td>
                     <td>{OBJECT_LABELS[contract.objectType] || '—'}</td>
-                    <td>
-                      {formatDate(contract.startDate)} — {formatDate(contract.endDate)}
-                    </td>
-                    <td>
-                      <span className={`ct-status ${STATUS_CLASS[contract.status] || ''}`}>
-                        {getStatusLabel(contract)}
-                      </span>
-                    </td>
+                    <td>{formatDate(contract.startDate)} — {formatDate(contract.endDate)}</td>
+                    <td><span className={`ct-status ${STATUS_CLASS[contract.status] || ''}`}>{getStatusLabel(contract)}</span></td>
                     <td className="ct-premium">{formatCurrency(contract.premium)} ₽</td>
                     <td className="ct-commission">{formatCurrency(contract.commissionAmount)} ₽</td>
                     <td className="ct-installments">{getInstallmentsSummary(contract.installments)}</td>
@@ -342,12 +344,7 @@ function Contracts() {
                 <tfoot>
                   <tr>
                     <td className="ct-total-label">Итого ({totals.count})</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
+                    <td></td><td></td><td></td><td></td><td></td><td></td>
                     <td className="ct-premium">{formatCurrency(totals.totalPremium)} ₽</td>
                     <td className="ct-commission">{formatCurrency(totals.totalCommission)} ₽</td>
                     <td className="ct-installments">{totals.totalPaidInstallments}/{totals.totalInstallments}</td>
@@ -357,32 +354,35 @@ function Contracts() {
             </table>
           </div>
 
-          {/* Пагинация */}
           {pagination.pages > 1 && (
             <div className="contracts-pagination">
-              <button
-                disabled={pagination.page <= 1}
-                onClick={() => setPage(prev => prev - 1)}
-              >
-                Назад
-              </button>
+              <button disabled={pagination.page <= 1} onClick={() => setPage(p => p - 1)}>Назад</button>
               <span>Стр. {pagination.page} из {pagination.pages}</span>
-              <button
-                disabled={pagination.page >= pagination.pages}
-                onClick={() => setPage(prev => prev + 1)}
-              >
-                Далее
-              </button>
+              <button disabled={pagination.page >= pagination.pages} onClick={() => setPage(p => p + 1)}>Далее</button>
             </div>
           )}
         </>
       )}
 
-      {/* Модаль нового договора */}
       {showForm && (
         <ContractForm
           onSubmit={handleContractSubmit}
           onClose={() => setShowForm(false)}
+        />
+      )}
+
+      {showImport && (
+        <ImportModal
+          onClose={() => setShowImport(false)}
+          onSuccess={handleImportSuccess}
+        />
+      )}
+
+      {/* Закрыть Excel меню при клике вне */}
+      {showExcelMenu && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 50 }}
+          onClick={() => setShowExcelMenu(false)}
         />
       )}
     </div>

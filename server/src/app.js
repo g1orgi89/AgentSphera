@@ -18,6 +18,7 @@ const taskRoutes = require('./routes/tasks');
 const exportRoutes = require('./routes/export');
 const actRoutes = require('./routes/acts');
 const dashboardRoutes = require('./routes/dashboard');
+const importRoutes = require('./routes/import');
 
 const app = express();
 
@@ -30,7 +31,7 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(mongoSanitize());
@@ -62,6 +63,7 @@ app.use('/api/v1/tasks', taskRoutes);
 app.use('/api/v1/export', exportRoutes);
 app.use('/api/v1/acts', actRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/import', importRoutes);
 
 // --- Health check ---
 
@@ -86,45 +88,38 @@ app.use((err, req, res, next) => {
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Внутренняя ошибка сервера';
 
-  // Mongoose: ошибка валидации
   if (err.name === 'ValidationError') {
     statusCode = 400;
     const messages = Object.values(err.errors).map(e => e.message);
     message = messages.join('. ');
   }
 
-  // Mongoose: неверный ObjectId
   if (err.name === 'CastError' && err.kind === 'ObjectId') {
     statusCode = 400;
     message = 'Неверный формат ID';
   }
 
-  // MongoDB: дубликат уникального поля
   if (err.code === 11000) {
     statusCode = 400;
     const field = Object.keys(err.keyValue || {}).join(', ');
     message = `Значение поля ${field} уже существует`;
   }
 
-  // JWT: неверный токен
   if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
     message = 'Неверный токен';
   }
 
-  // JWT: токен истёк
   if (err.name === 'TokenExpiredError') {
     statusCode = 401;
     message = 'Токен истёк';
   }
 
-  // Multer: файл слишком большой
   if (err.code === 'LIMIT_FILE_SIZE') {
     statusCode = 400;
-    message = 'Файл слишком большой (максимум 5MB)';
+    message = 'Файл слишком большой';
   }
 
-  // В продакшене не показываем детали 500-ых ошибок
   if (statusCode === 500 && process.env.NODE_ENV === 'production') {
     message = 'Внутренняя ошибка сервера';
   }
