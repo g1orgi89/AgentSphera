@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { BurgerButton } from '../components/Layout';
 import './Calendar.css';
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
@@ -187,6 +188,7 @@ function Calendar() {
   return (
     <div className="cal-page">
       <div className="cal-header">
+        <BurgerButton />
         <h1>Календарь</h1>
       </div>
 
