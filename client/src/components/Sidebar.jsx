@@ -107,14 +107,21 @@ function getInitials(name) {
   return parts[0][0].toUpperCase();
 }
 
-function Sidebar({ collapsed }) {
+function Sidebar({ collapsed, onMobileClose, isMobileDrawer }) {
   const { user, logout } = useAuth();
 
   return (
-    <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''}`}>
-      {/* Логотип */}
+    <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''} ${isMobileDrawer ? 'sidebar-mobile' : ''}`}>
+      {/* Логотип + кнопка закрытия (мобильный) */}
       <div className="sidebar-top">
         <Logo collapsed={collapsed} />
+        {isMobileDrawer && (
+          <button className="sidebar-close-btn" onClick={onMobileClose} aria-label="Закрыть меню">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 4l8 8M12 4l-8 8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Навигация */}
