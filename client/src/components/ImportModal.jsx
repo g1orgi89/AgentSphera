@@ -228,8 +228,7 @@ function ImportModal({ onClose, onSuccess }) {
                 )}
 
                 <div className="import-preview-info">
-                  Найдено строк: <b>{preview.totalRows}</b>
-                  {предпросмотр первых 10:}
+                  Найдено строк: <b>{preview.totalRows}</b> (предпросмотр первых 10)
                 </div>
 
                 {/* Таблица предпросмотра */}
