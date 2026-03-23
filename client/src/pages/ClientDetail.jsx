@@ -4,6 +4,7 @@ import api from '../services/api';
 import ClientForm from '../components/ClientForm';
 import ContractForm from '../components/ContractForm';
 import TaskForm from '../components/TaskForm';
+import { BurgerButton } from '../components/Layout';
 import './ClientDetail.css';
 
 const STATUS_LABELS = {
@@ -43,23 +44,19 @@ function ClientDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Модальные формы
   const [showEditForm, setShowEditForm] = useState(false);
   const [showLinkForm, setShowLinkForm] = useState(false);
   const [linkValue, setLinkValue] = useState('');
   const [linkSaving, setLinkSaving] = useState(false);
 
-  // Договоры
   const [contracts, setContracts] = useState([]);
   const [showContractForm, setShowContractForm] = useState(false);
   const [editingContract, setEditingContract] = useState(null);
 
-  // Заметки
   const [notes, setNotes] = useState([]);
   const [noteText, setNoteText] = useState('');
   const [noteAdding, setNoteAdding] = useState(false);
 
-  // Задачи
   const [clientTasks, setClientTasks] = useState([]);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -90,7 +87,6 @@ function ClientDetail() {
       const res = await api.get('/contracts', {
         params: { search: '', limit: 100 }
       });
-      // Фильтруем по clientId на клиенте (API возвращает все договоры пользователя)
       const all = res.data.data || [];
       const clientContracts = all.filter(c => {
         const cid = typeof c.clientId === 'object' ? c.clientId._id : c.clientId;
@@ -98,7 +94,6 @@ function ClientDetail() {
       });
       setContracts(clientContracts);
     } catch {
-      // Не критично
     }
   }, [id]);
 
@@ -107,7 +102,6 @@ function ClientDetail() {
       const res = await api.get(`/clients/${id}/notes`);
       setNotes(res.data.data);
     } catch {
-      // Молча — заметки не критичны
     }
   }, [id]);
 
@@ -123,7 +117,6 @@ function ClientDetail() {
       });
       setClientTasks(filtered);
     } catch {
-      // Не критично
     }
   }, [id]);
 
@@ -197,8 +190,6 @@ function ClientDetail() {
     setShowLinkForm(true);
   };
 
-  // --- Договоры: CRUD ---
-
   const handleContractSubmit = async (payload) => {
     if (editingContract) {
       await api.put(`/contracts/${editingContract._id}`, payload);
@@ -208,7 +199,7 @@ function ClientDetail() {
     setShowContractForm(false);
     setEditingContract(null);
     fetchContracts();
-    fetchClient(); // Обновляем сводку
+    fetchClient();
   };
 
   const handleContractEdit = (contract) => {
@@ -221,7 +212,7 @@ function ClientDetail() {
     try {
       await api.delete(`/contracts/${contractId}`);
       fetchContracts();
-      fetchClient(); // Обновляем сводку
+      fetchClient();
     } catch (err) {
       setError(err.response?.data?.error || 'Ошибка удаления договора');
     }
@@ -233,17 +224,14 @@ function ClientDetail() {
         paid: !currentPaid
       });
       fetchContracts();
-      fetchClient(); // Обновляем сводку
+      fetchClient();
     } catch (err) {
       setError(err.response?.data?.error || 'Ошибка обновления взноса');
     }
   };
 
-  // --- Задачи: CRUD ---
-
   const handleTaskSubmit = async (data) => {
     try {
-      // Привязываем к текущему клиенту
       const payload = { ...data, clientId: id };
       if (editingTask) {
         await api.put(`/tasks/${editingTask._id}`, payload);
@@ -281,8 +269,6 @@ function ClientDetail() {
       setError(err.response?.data?.error || 'Ошибка удаления задачи');
     }
   };
-
-  // --- Форматирование ---
 
   const formatBirthday = (date) => {
     if (!date) return null;
@@ -368,12 +354,15 @@ function ClientDetail() {
   return (
     <div className="cd-page">
       {/* Навигация */}
-      <Link to="/clients" className="cd-back-link">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        Клиенты
-      </Link>
+      <div className="cd-nav-row">
+        <BurgerButton />
+        <Link to="/clients" className="cd-back-link">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Клиенты
+        </Link>
+      </div>
 
       {error && <div className="cd-error">{error}</div>}
 
