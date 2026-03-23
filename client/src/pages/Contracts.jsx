@@ -4,6 +4,7 @@ import api from '../services/api';
 import { useToast } from '../store/ToastContext';
 import ContractForm from '../components/ContractForm';
 import ImportModal from '../components/ImportModal';
+import { BurgerButton } from '../components/Layout';
 import './Contracts.css';
 
 const STATUS_LABELS = {
@@ -205,6 +206,7 @@ function Contracts() {
   return (
     <div className="contracts-page">
       <div className="contracts-header">
+        <BurgerButton />
         <h1>Договоры</h1>
         <div className="contracts-header-actions">
           {/* Excel dropdown */}
@@ -307,6 +309,7 @@ function Contracts() {
         <>
           <div className="contracts-count">Найдено: {pagination.total}</div>
 
+          {/* === Десктопная таблица === */}
           <div className="contracts-table-wrap">
             <table className="contracts-table">
               <thead>
@@ -352,6 +355,66 @@ function Contracts() {
                 </tfoot>
               )}
             </table>
+          </div>
+
+          {/* === Мобильные карточки === */}
+          <div className="contracts-cards">
+            {/* Итого-строка */}
+            {totals && (
+              <div className="contracts-mobile-totals">
+                <div className="contracts-mobile-totals-item">
+                  <span className="contracts-mobile-totals-label">Итого</span>
+                  <span className="contracts-mobile-totals-value">{formatCurrency(totals.totalPremium)} ₽</span>
+                </div>
+                <div className="contracts-mobile-totals-item contracts-mobile-totals-kv">
+                  <span className="contracts-mobile-totals-label">КВ</span>
+                  <span className="contracts-mobile-totals-value">{formatCurrency(totals.totalCommission)} ₽</span>
+                </div>
+                <div className="contracts-mobile-totals-item">
+                  <span className="contracts-mobile-totals-label">Кол-во</span>
+                  <span className="contracts-mobile-totals-value">{totals.count}</span>
+                </div>
+              </div>
+            )}
+
+            {contracts.map(contract => (
+              <div
+                key={contract._id}
+                className="contracts-card"
+                onClick={() => navigate(`/clients/${getClientId(contract)}`)}
+              >
+                <div className="contracts-card-top">
+                  <div className="contracts-card-company">
+                    <span>{contract.company}</span>
+                    <span className="contracts-card-dot">·</span>
+                    <span className="ct-type">{contract.type}</span>
+                  </div>
+                  <span className={`ct-status ${STATUS_CLASS[contract.status] || ''}`}>
+                    {getStatusLabel(contract)}
+                  </span>
+                </div>
+                <div className="contracts-card-client">
+                  <span className="contracts-card-client-name">{getClientName(contract)}</span>
+                  {contract.number && (
+                    <>
+                      <span className="contracts-card-dot">·</span>
+                      <span className="contracts-card-number">#{contract.number}</span>
+                    </>
+                  )}
+                </div>
+                <div className="contracts-card-bottom">
+                  <div className="contracts-card-money">
+                    <span className="contracts-card-premium">Премия: {formatCurrency(contract.premium)} ₽</span>
+                    <span className="contracts-card-kv">КВ: {formatCurrency(contract.commissionAmount)} ₽</span>
+                  </div>
+                  {contract.installments && contract.installments.length > 0 && (
+                    <span className="contracts-card-inst">
+                      Взносы: {getInstallmentsSummary(contract.installments)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
 
           {pagination.pages > 1 && (
