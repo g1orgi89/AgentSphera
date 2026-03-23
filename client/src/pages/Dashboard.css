@@ -583,7 +583,7 @@
     padding: 12px;
     background: var(--card);
     gap: 8px;
-    margin-bottom: 0;
+    margin-bottom: 10px;
   }
 
   .dash-header h1 {
