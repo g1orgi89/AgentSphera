@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useToast } from '../store/ToastContext';
 import TaskForm from '../components/TaskForm';
+import { BurgerButton } from '../components/Layout';
 import './Tasks.css';
 
 const FILTER_OPTIONS = [
@@ -135,6 +136,7 @@ function Tasks() {
   return (
     <div className="tasks-page">
       <div className="tasks-header">
+        <BurgerButton />
         <h1>Задачи</h1>
         <button className="tasks-add-btn" onClick={handleCreate}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
