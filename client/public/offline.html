@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>АгентСфера — Нет сети</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Lato', sans-serif;
+      background: #ECE3E4;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .offline {
+      text-align: center;
+      max-width: 400px;
+    }
+    .offline-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+    }
+    .offline h1 {
+      font-family: 'Tenor Sans', serif;
+      font-size: 1.5rem;
+      color: #01575C;
+      margin-bottom: 12px;
+      font-weight: 400;
+    }
+    .offline p {
+      color: #666;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+    .offline-btn {
+      display: inline-block;
+      background: #01575C;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      font-family: 'Lato', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .offline-btn:hover { background: #3CA8A8; }
+  </style>
+</head>
+<body>
+  <div class="offline">
+    <svg class="offline-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="40" r="36" stroke="#3CA8A8" stroke-width="3" fill="none" opacity="0.3"/>
+      <path d="M28 52l24-24" stroke="#01575C" stroke-width="3" stroke-linecap="round"/>
+      <path d="M40 24c-8.837 0-16 7.163-16 16M56 40c0-4.418-1.79-8.418-4.686-11.314" stroke="#01575C" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      <circle cx="40" cy="40" r="4" fill="#FEC400"/>
+    </svg>
+    <h1>Нет подключения</h1>
+    <p>Проверьте интернет-соединение и попробуйте снова. АгентСфера требует подключение к сети для работы.</p>
+    <button class="offline-btn" onclick="window.location.reload()">Попробовать снова</button>
+  </div>
+</body>
+</html>

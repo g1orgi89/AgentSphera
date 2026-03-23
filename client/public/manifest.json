@@ -1,0 +1,24 @@
+{
+  "name": "АгентСфера",
+  "short_name": "АгентСфера",
+  "description": "CRM для страховых агентов",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ECE3E4",
+  "theme_color": "#01575C",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

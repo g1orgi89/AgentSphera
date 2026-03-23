@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Maskable: safe zone 80% center, extra padding -->
+  <rect width="512" height="512" fill="#01575C"/>
+  <g transform="translate(256,256) scale(0.7)">
+    <!-- Большой ромб -->
+    <rect x="-120" y="-120" width="170" height="170" rx="12" transform="rotate(45)" fill="#3CA8A8"/>
+    <!-- Малый ромб -->
+    <rect x="10" y="10" width="130" height="130" rx="10" transform="rotate(45)" fill="#01575C" stroke="#3CA8A8" stroke-width="4"/>
+    <!-- Акцентный ромб -->
+    <rect x="30" y="30" width="50" height="50" rx="6" transform="rotate(45)" fill="#FEC400"/>
+    <!-- Буква А -->
+    <text x="-58" y="10" fill="#fff" font-size="100" font-family="'Tenor Sans',serif" font-weight="400" text-anchor="middle">A</text>
+    <!-- Буква С -->
+    <text x="58" y="75" fill="#fff" font-size="80" font-family="'Tenor Sans',serif" font-weight="400" text-anchor="middle">C</text>
+  </g>
+</svg>
