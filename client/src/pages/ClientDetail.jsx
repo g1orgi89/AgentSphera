@@ -85,14 +85,9 @@ function ClientDetail() {
   const fetchContracts = useCallback(async () => {
     try {
       const res = await api.get('/contracts', {
-        params: { search: '', limit: 100 }
+        params: { clientId: id, limit: 100 }
       });
-      const all = res.data.data || [];
-      const clientContracts = all.filter(c => {
-        const cid = typeof c.clientId === 'object' ? c.clientId._id : c.clientId;
-        return cid === id;
-      });
-      setContracts(clientContracts);
+      setContracts(res.data.data || []);
     } catch {
     }
   }, [id]);
@@ -108,14 +103,9 @@ function ClientDetail() {
   const fetchTasks = useCallback(async () => {
     try {
       const res = await api.get('/tasks', {
-        params: { filter: 'all', limit: 100, sort: 'dueDate' }
+        params: { clientId: id, filter: 'all', limit: 100, sort: 'dueDate' }
       });
-      const all = res.data.data || [];
-      const filtered = all.filter(t => {
-        const cid = typeof t.clientId === 'object' ? t.clientId?._id : t.clientId;
-        return cid === id;
-      });
-      setClientTasks(filtered);
+      setClientTasks(res.data.data || []);
     } catch {
     }
   }, [id]);
