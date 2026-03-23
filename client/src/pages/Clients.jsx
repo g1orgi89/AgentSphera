@@ -4,6 +4,7 @@ import api from '../services/api';
 import { useToast } from '../store/ToastContext';
 import ClientCard from '../components/ClientCard';
 import ClientForm from '../components/ClientForm';
+import { BurgerButton } from '../components/Layout';
 import './Clients.css';
 
 const STATUS_OPTIONS = [
@@ -144,6 +145,7 @@ function Clients() {
   return (
     <div className="clients-page">
       <div className="clients-header">
+        <BurgerButton />
         <h1>Клиенты</h1>
         <div className="clients-header-actions">
           <button
