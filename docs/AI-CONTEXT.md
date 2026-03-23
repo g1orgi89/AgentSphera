@@ -21,11 +21,11 @@
 
 ## ТЕКУЩИЙ СТАТУС
 
-**Фаза:** 7 (дополнительные фичи) — в процессе
-**Последняя задача:** 7.1 (Мобильная адаптация всех страниц) — ГОТОВО
-**Следующая задача:** 7.3 (PWA — manifest, service worker, кнопка установки)
+**Фаза:** 7 (дополнительные фичи) — ЗАВЕРШЕНА
+**Последняя задача:** 7.3 (PWA) — ГОТОВО
+**Следующая задача:** 6.6 (Деплой — VPS + nginx + PM2 + SSL)
 **Блокеры:** Домен и VPS не настроены → блокируют деплой
-**Тестирование:** 7.1 (мобильная адаптация) — ожидает тестирования на устройствах. 7.2 (Импорт) — ожидает тестирования с тестовым файлом.
+**Тестирование:** 7.3 (PWA) — проверить установку на Android и iOS. 7.1 (мобильная адаптация) — протестировано на iPhone 12 Pro Max, исправлены баги (зум инпутов, overflow). 7.2 (Импорт) — ожидает тестирования с тестовым файлом.
 
 ---
 
@@ -35,8 +35,8 @@
 |---|--------|-----------|--------|
 | 7.1 | Мобильная адаптация всех страниц | Средняя | **ГОТОВО** |
 | 7.2 | Импорт договоров из Excel | Высокая | **ГОТОВО** |
-| 7.3 | PWA — manifest, service worker, кнопка установки | Низкая | Следующая |
-| 6.6 | Деплой (VPS + nginx + PM2 + SSL) | Средняя | Ждёт домен/VPS |
+| 7.3 | PWA — manifest, service worker, кнопка установки | Низкая | **ГОТОВО** |
+| 6.6 | Деплой (VPS + nginx + PM2 + SSL) | Средняя | Следующая (ждёт домен/VPS) |
 | 6.4 | Мягкое удаление и бэкапы | Средняя | После деплоя |
 | 6.7 | Приёмка | — | После деплоя |
 
@@ -76,19 +76,19 @@
 - [x] 6.1 — Сайдбар и навигация
 - [x] 6.2 — UI-компоненты (Toast)
 - [x] 6.3 — Валидация и обработка ошибок (404 + error handler)
-- [x] 7.2 — Импорт договоров из Excel: importService.js (автодетект 30+ заголовков → маппинг полей, парсинг дат DD.MM.YYYY + Excel serial, чисел, автоопределение objectType по виду: КАСКО/ОСАГО→auto, ИПОТЕКА→realty, НС/ДМС→life). Поиск клиента по ФИО (case-insensitive) — если найден, привязывает + дополняет пустые поля (телефон, email, ДР); если нет — создаёт нового. Пропуск дубликатов по номеру договора. routes/import.js (POST /import/preview — загрузка + листы + маппинг + предпросмотр, POST /import/save — сохранение в БД). ImportModal.jsx + ImportModal.css (drag&drop, выбор листа, показ маппинга, предпросмотр 10 строк, результат: создано/найдено/пропущено/ошибки). Contracts.jsx — кнопка «Excel» → dropdown (Импорт/Экспорт) + Toast. app.js — подключён import роут, JSON лимит 10mb.
-- [x] 7.1 — Мобильная адаптация всех страниц. Layout.jsx: MobileMenuContext + BurgerButton компонент + mobileOpen state + overlay + body scroll lock + закрытие при навигации. Sidebar.jsx: принимает onMobileClose/isMobileDrawer, рендерит X-кнопку закрытия, класс sidebar-mobile. Sidebar.css: полностью переделан мобильный режим — drawer 260px поверх контента (position:fixed, translateX), overlay rgba(1,87,92,0.55), бургер-кнопка 38×38 (#01575C, полоски #FEC400). BurgerButton добавлен во все JSX страниц: Dashboard, Clients, ClientDetail, Contracts, Tasks, Calendar, Acts. CSS всех страниц обновлён @media(max-width:768px): padding:0, хедер как мобильный бар (бургер+заголовок+кнопки), метрики 2 колонки, фильтры горизонтальный scroll, карточки в 1 колонку. Contracts: таблица скрыта на мобильном → карточки (.contracts-cards) с итого-строкой (#01575C, КВ жёлтый). ClientDetail: .cd-nav-row (бургер + back-link). Модалки (ContractForm, ImportModal, ClientForm, TaskForm) — 100% ширины, border-radius:0, поля в столбик, кнопки вертикально. Calendar: h1 скрыт, навигация компактнее, ячейки min-height:52→44px.
+- [x] 7.2 — Импорт договоров из Excel
+- [x] 7.1 — Мобильная адаптация всех страниц
+- [x] 7.3 — PWA: manifest.json (name, short_name, display:standalone, theme_color:#01575C, background_color:#ECE3E4, start_url:/dashboard). Иконки: icon.svg + icon-maskable.svg (логотип АС — два ромба, брендовые цвета). Service worker sw.js (precache shell, stale-while-revalidate для статики, network-first для навигации, offline fallback). offline.html — красивая страница «Нет подключения» с кнопкой «Попробовать снова». index.html — meta theme-color, apple-mobile-web-app-capable, apple-mobile-web-app-status-bar-style, description, manifest link, favicon. main.jsx — регистрация SW при загрузке. PWAInstallPrompt.jsx + CSS — кнопка «Установить» в сайдбаре: на Android перехватывает beforeinstallprompt → вызывает prompt(), на iOS показывает модалку с пошаговой инструкцией (Поделиться → На экран «Домой» → Добавить). Кнопка скрыта если уже установлено (display-mode:standalone) или пользователь закрыл.
 - [ ] 6.4 — **ОТЛОЖЕНА** — Мягкое удаление и бэкапы (после деплоя)
 - [ ] 6.5 — **ОТЛОЖЕНА** — Автотесты
 - [ ] 6.6 — Деплой (нужен домен + VPS)
 - [ ] 6.7 — Приёмка
-- [ ] 7.3 — PWA (manifest, service worker, кнопка установки, инструкция iOS)
 
 ---
 
 ## ПРОШЛАЯ СЕССИЯ
 
-_23.03.2026 — Задача 7.1: Мобильная адаптация всех страниц (2 сессии). Сессия 1: Layout.jsx (MobileMenuContext, BurgerButton, drawer, overlay), Sidebar.jsx (onMobileClose, isMobileDrawer, X-кнопка), Sidebar.css (drawer 260px, overlay, бургер), все CSS страниц обновлены (Dashboard, Clients, ClientDetail, Contracts, Tasks, Calendar, Acts), BurgerButton добавлен в Clients.jsx. Сессия 2: BurgerButton добавлен в остальные JSX (Dashboard, Tasks, Calendar, Acts, Contracts, ClientDetail). Contracts.jsx — мобильные карточки (.contracts-cards, .contracts-card, .contracts-mobile-totals) + CSS. ClientDetail.jsx — .cd-nav-row обёртка. ContractForm.css + ImportModal.css — мобильные стили (100% ширины, поля в столбик). Далее: 7.3 (PWA)._
+_23.03.2026 — Задачи 7.1 + 7.3 + баг-фиксы мобильной адаптации. 7.1: BurgerButton во все JSX, мобильные карточки Contracts, CSS модалок. 7.3 (PWA): manifest.json, icon.svg/icon-maskable.svg, sw.js (precache + stale-while-revalidate + offline fallback), offline.html, index.html мета-теги, регистрация SW в main.jsx, PWAInstallPrompt компонент (Android: beforeinstallprompt, iOS: инструкция с шагами), добавлен в Sidebar. Баг-фиксы: Dashboard хедер margin-bottom, iOS Safari авто-зум (font-size:16px !important), Contracts overflow-x (фильтры grid 2×2, overflow-x:hidden, кнопки иконки-only). Далее: 6.6 деплой (ждёт домен/VPS) или 6.4 мягкое удаление._
 
 ---
 
@@ -118,6 +118,9 @@ _23.03.2026 — Задача 7.1: Мобильная адаптация всех
 | 23.03.2026 | Порядок: импорт → адаптация → PWA | Сначала функционал, потом оформление |
 | 23.03.2026 | Contracts: карточки вместо таблицы на мобильном | Таблица с 10 колонками нечитаема на 375px |
 | 23.03.2026 | BurgerButton через Context (не prop drilling) | Layout передаёт openMenu через MobileMenuContext |
+| 23.03.2026 | PWA: SVG иконки (без PNG) | Chrome 96+ и Safari поддерживают SVG в manifest |
+| 23.03.2026 | PWA: простой SW без офлайн-кеша API | CRM требует сервер, полный офлайн бессмысленен |
+| 23.03.2026 | PWA Install: в сайдбаре, не в баннере | Ненавязчиво, видно при открытии меню |
 
 ---
 
