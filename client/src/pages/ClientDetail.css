@@ -885,11 +885,60 @@ a.cd-contact:hover {
   color: var(--danger);
 }
 
-/* Адаптив */
+/* === Мобильная адаптация === */
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .cd-page {
+    padding: 0;
+  }
+
+  .cd-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 12px 0;
+    margin-bottom: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+    background: var(--pri);
+    border-radius: 8px;
+    margin: 12px 12px 0;
+    padding: 8px 12px;
+  }
+
+  .cd-back-link:hover {
+    background: var(--sec);
+    color: #fff;
+  }
+
   .cd-header {
+    margin: 8px 12px;
+    padding: 14px;
     flex-direction: column;
+    gap: 12px;
+    border-radius: 14px;
+  }
+
+  .cd-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--sec);
+    font-size: 1.2rem;
+  }
+
+  .cd-name {
+    font-size: 1.2rem;
+  }
+
+  .cd-contacts {
+    gap: 4px;
+    font-size: 0.6875rem;
+  }
+
+  .cd-contact {
+    font-size: 0.6875rem;
   }
 
   .cd-header-actions {
@@ -900,27 +949,92 @@ a.cd-contact:hover {
   .cd-btn-delete {
     flex: 1;
     justify-content: center;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 0.6875rem;
+  }
+
+  .cd-docs {
+    margin: 0 12px 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    border-radius: 8px;
   }
 
   .cd-summary {
     grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin: 0 12px 10px;
   }
 
-  .cd-docs {
-    flex-direction: column;
-    align-items: flex-start;
+  .cd-summary-card {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .cd-summary-value {
+    font-size: 1.05rem;
+  }
+
+  .cd-section {
+    margin: 0 12px;
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .cd-separator {
+    margin: 10px 12px;
+  }
+
+  .cd-note {
+    margin: 0 12px 10px;
+  }
+
+  .cd-error {
+    margin: 8px 12px;
   }
 
   .cd-notes-input {
     flex-direction: column;
+    gap: 6px;
+  }
+
+  .cd-notes-input input {
+    border-width: 2px;
+    border-radius: 10px;
+  }
+
+  .cd-notes-add-btn {
+    border-radius: 10px;
+  }
+
+  .cd-contract-card {
+    padding: 14px;
+    border-radius: 14px;
   }
 
   .cd-contract-top {
     flex-direction: column;
+    gap: 4px;
   }
 
   .cd-contract-details {
     flex-direction: column;
     gap: 4px;
+  }
+
+  .cd-contract-detail {
+    font-size: 0.75rem;
+  }
+
+  .cd-contract-action-btn {
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 0.6875rem;
+  }
+
+  .cd-task-item {
+    padding: 10px;
+    border-radius: 14px;
   }
 }

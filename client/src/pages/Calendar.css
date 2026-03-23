@@ -353,24 +353,119 @@
   display: block;
 }
 
-/* Адаптив */
+/* === Мобильная адаптация === */
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .cal-page {
+    padding: 0;
+  }
+
+  .cal-header {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: var(--card);
+    gap: 8px;
+    margin-bottom: 0;
+  }
+
+  .cal-header h1 {
+    display: none;
+  }
+
+  .cal-nav {
+    padding: 0 12px;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+
+  .cal-nav-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--pri);
+    border: none;
+    color: #fff;
+    padding: 0;
+  }
+
+  .cal-nav-btn:hover {
+    background: var(--sec);
+    color: #fff;
+  }
+
+  .cal-nav-title {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .cal-nav-month {
+    font-size: 1.05rem;
+    color: var(--pri);
+  }
+
+  .cal-today-btn {
+    display: none;
+  }
+
+  .cal-summary {
+    padding: 0 12px;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .cal-summary-item {
+    font-size: 0.6875rem;
+    padding: 5px 12px;
+    border-radius: 8px;
+  }
+
+  .cal-grid {
+    margin: 0 10px;
+    border-radius: 12px;
+  }
+
+  .cal-weekday {
+    font-size: 0.6875rem;
+    padding: 6px 2px;
+  }
+
   .cal-cell {
     min-height: 52px;
     padding: 4px;
   }
 
   .cal-day-num {
-    font-size: 0.7rem;
-  }
-
-  .cal-summary {
-    gap: 10px;
+    font-size: 0.8125rem;
   }
 
   .cal-diamond {
     width: 5px;
     height: 5px;
+  }
+
+  .cal-details {
+    margin: 10px 12px;
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .cal-detail-item {
+    padding: 8px 10px;
+  }
+
+  .cal-detail-title {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cal-cell {
+    min-height: 44px;
+    padding: 3px;
+  }
+
+  .cal-day-num {
+    font-size: 0.75rem;
   }
 }
