@@ -580,3 +580,132 @@
 .client-picker-clear:hover {
   color: var(--danger);
 }
+
+/* === Мобильная адаптация === */
+
+@media (max-width: 768px) {
+  .clients-page {
+    padding: 0;
+  }
+
+  .clients-header {
+    padding: 12px;
+    background: var(--card);
+    gap: 8px;
+    margin-bottom: 0;
+  }
+
+  .clients-header h1 {
+    font-size: 1.125rem;
+    flex: 1;
+  }
+
+  .clients-header-actions {
+    gap: 4px;
+  }
+
+  .clients-add-btn {
+    padding: 0 12px;
+    height: 34px;
+    font-size: 0.6875rem;
+  }
+
+  .clients-export-btn {
+    padding: 0 12px;
+    height: 34px;
+    font-size: 0.6875rem;
+  }
+
+  .clients-toolbar {
+    padding: 10px 12px 0;
+    gap: 8px;
+  }
+
+  .clients-search {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .clients-search input {
+    padding: 10px 12px 10px 38px;
+    border-width: 2px;
+    border-radius: 10px;
+    font-size: 0.8125rem;
+  }
+
+  .clients-filters {
+    width: 100%;
+  }
+
+  .clients-filters select {
+    flex: 1;
+    padding: 9px;
+    border-width: 2px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+  }
+
+  .clients-count {
+    padding: 8px 14px 0;
+    font-size: 0.75rem;
+  }
+
+  .clients-list {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .client-card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .client-card:hover {
+    transform: none;
+  }
+
+  .client-card-name {
+    font-size: 0.875rem;
+  }
+
+  .client-card-status {
+    font-size: 0.5625rem;
+  }
+
+  .client-card-row {
+    font-size: 0.6875rem;
+  }
+
+  .client-card-actions button {
+    padding: 7px 12px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    border-radius: 8px;
+  }
+
+  .clients-empty {
+    margin: 0 12px;
+  }
+
+  .clients-error {
+    margin: 8px 12px;
+  }
+
+  .clients-pagination {
+    padding: 12px;
+  }
+
+  /* Модалки на весь экран */
+  .client-form-overlay {
+    padding: 0;
+  }
+
+  .client-form-modal {
+    max-width: 100%;
+    max-height: 100vh;
+    height: 100vh;
+    border-radius: 0;
+    padding: 20px;
+  }
+}

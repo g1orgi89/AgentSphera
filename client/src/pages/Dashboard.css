@@ -574,35 +574,124 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .dash-page {
-    padding: 16px;
+    padding: 0;
   }
 
   .dash-header {
+    padding: 12px;
+    background: var(--card);
+    gap: 8px;
+    margin-bottom: 0;
+  }
+
+  .dash-header h1 {
+    font-size: 1.125rem;
+    flex: 1;
+  }
+
+  .dash-header-controls {
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  .dash-search {
+    display: none;
+  }
+
+  .dash-period-select {
+    padding: 6px 8px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    border-width: 2px;
+    border-color: var(--pri);
+    color: var(--pri);
+  }
+
+  .dash-error {
+    margin: 0 12px 8px;
+  }
+
+  .dash-alerts {
+    margin: 0 12px 8px;
+    border-radius: 12px;
+  }
+
+  .dash-alerts-body {
+    padding: 0 12px 12px;
+  }
+
+  .dash-alert-card-label {
+    font-size: 0.8125rem;
+  }
+
+  .dash-alert-detail-name {
+    min-width: auto;
+  }
+
+  .dash-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 0 12px;
+    margin-bottom: 14px;
+  }
+
+  .dash-metric-card {
+    padding: 12px;
+    gap: 0;
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .dash-header-controls {
-    width: 100%;
+  .dash-metric-icon {
+    display: none;
   }
 
-  .dash-search {
-    flex: 1;
+  .dash-metric-value {
+    font-size: 1.05rem;
   }
 
-  .dash-search input {
-    width: 100%;
+  .dash-metric-label {
+    font-size: 0.625rem;
   }
 
-  .dash-metrics {
-    grid-template-columns: 1fr;
+  .dash-analytics {
+    margin: 0 12px 14px;
+    border-radius: 12px;
+  }
+
+  .dash-analytics-body {
+    padding: 0 12px 14px;
   }
 
   .dash-analytics-thead,
   .dash-analytics-row {
     grid-template-columns: 2fr 0.8fr 1fr 1fr;
     font-size: 0.75rem;
+  }
+
+  .dash-upcoming {
+    padding: 0 12px;
+    margin-bottom: 14px;
+  }
+
+  .dash-upcoming-columns {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .dash-upcoming-block {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dash-metric-value {
+    font-size: 0.95rem;
+  }
+
+  .dash-alert-detail-row {
+    gap: 4px;
   }
 }

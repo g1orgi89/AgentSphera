@@ -498,3 +498,114 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* === Мобильная адаптация === */
+
+@media (max-width: 768px) {
+  .tasks-page {
+    padding: 0;
+  }
+
+  .tasks-header {
+    padding: 12px;
+    background: var(--card);
+    gap: 8px;
+    margin-bottom: 0;
+  }
+
+  .tasks-header h1 {
+    font-size: 1.125rem;
+    flex: 1;
+  }
+
+  .tasks-add-btn {
+    padding: 0 12px;
+    height: 34px;
+    font-size: 0.6875rem;
+  }
+
+  .tasks-toolbar {
+    padding: 10px 12px 0;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tasks-filters {
+    width: 100%;
+    border-width: 2px;
+    border-radius: 10px;
+  }
+
+  .tasks-filter-btn {
+    flex: 1;
+    text-align: center;
+    padding: 9px 8px;
+    font-size: 0.75rem;
+    border-radius: 8px;
+  }
+
+  .tasks-sort {
+    width: 100%;
+    padding: 9px;
+    border-width: 2px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+  }
+
+  .tasks-count {
+    padding: 8px 14px 0;
+    font-size: 0.75rem;
+  }
+
+  .tasks-list {
+    padding: 0 12px;
+  }
+
+  .task-item {
+    padding: 14px;
+    border-radius: 14px;
+    gap: 10px;
+  }
+
+  .task-item:hover {
+    box-shadow: var(--shadow);
+  }
+
+  .task-title {
+    font-size: 0.8125rem;
+  }
+
+  .task-meta {
+    gap: 10px;
+  }
+
+  .task-date,
+  .task-client {
+    font-size: 0.6875rem;
+  }
+
+  .tasks-error {
+    margin: 8px 12px;
+  }
+
+  .tasks-empty {
+    margin: 0 12px;
+  }
+
+  .tasks-pagination {
+    padding: 12px;
+  }
+
+  /* Модалки на весь экран */
+  .task-form-overlay {
+    padding: 0;
+  }
+
+  .task-form-modal {
+    max-width: 100%;
+    max-height: 100vh;
+    height: 100vh;
+    border-radius: 0;
+    padding: 20px;
+  }
+}

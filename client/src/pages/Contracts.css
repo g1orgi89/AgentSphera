@@ -369,6 +369,12 @@ th.sorted .sort-arrow {
   color: var(--pri);
 }
 
+/* Мобильная строка итогов */
+
+.contracts-mobile-totals {
+  display: none;
+}
+
 /* Пагинация */
 
 .contracts-pagination {
@@ -402,4 +408,107 @@ th.sorted .sort-arrow {
 .contracts-pagination span {
   font-size: 0.875rem;
   color: var(--text-light);
+}
+
+/* === Мобильная адаптация === */
+
+@media (max-width: 768px) {
+  .contracts-page {
+    padding: 0;
+  }
+
+  .contracts-header {
+    padding: 12px;
+    background: var(--card);
+    gap: 8px;
+    margin-bottom: 0;
+    flex-wrap: nowrap;
+  }
+
+  .contracts-header h1 {
+    font-size: 1.125rem;
+    flex: 1;
+  }
+
+  .contracts-header-actions {
+    gap: 4px;
+  }
+
+  .contracts-add-btn {
+    padding: 0 12px;
+    height: 34px;
+    font-size: 0.6875rem;
+  }
+
+  .contracts-export-btn {
+    padding: 0 12px;
+    height: 34px;
+    font-size: 0.6875rem;
+  }
+
+  .contracts-toolbar {
+    padding: 10px 12px 0;
+    gap: 8px;
+  }
+
+  .contracts-search {
+    border-width: 2px;
+    border-radius: 10px;
+  }
+
+  .contracts-search input {
+    font-size: 0.8125rem;
+  }
+
+  .contracts-filters {
+    gap: 4px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .contracts-filters select {
+    flex: 1;
+    padding: 9px;
+    border-width: 2px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+  }
+
+  .contracts-count {
+    padding: 8px 14px 0;
+    font-size: 0.75rem;
+  }
+
+  .contracts-error {
+    margin: 8px 12px;
+  }
+
+  /* Таблица прокручивается горизонтально */
+  .contracts-table-wrap {
+    margin: 0 12px;
+    border-radius: 14px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .contracts-table {
+    font-size: 0.75rem;
+  }
+
+  .contracts-table th {
+    padding: 8px 6px;
+    font-size: 0.65rem;
+  }
+
+  .contracts-table td {
+    padding: 8px 6px;
+  }
+
+  .contracts-empty {
+    margin: 0 12px;
+  }
+
+  .contracts-pagination {
+    padding: 12px;
+  }
 }
