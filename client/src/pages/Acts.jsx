@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/api';
+import { BurgerButton } from '../components/Layout';
 import './Acts.css';
 
 const STATUS_LABELS = {
@@ -286,6 +287,7 @@ function Acts() {
   return (
     <div className="acts-page">
       <div className="acts-header">
+        <BurgerButton />
         <h1>Акты сверки</h1>
       </div>
 
