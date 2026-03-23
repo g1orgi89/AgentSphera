@@ -56,7 +56,13 @@ export function AuthProvider({ children }) {
     navigate('/dashboard');
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Очищаем refresh cookie на сервере
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Не блокируем logout если сервер недоступен
+    }
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
