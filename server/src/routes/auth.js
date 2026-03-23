@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 
@@ -131,6 +132,66 @@ router.post('/login', async (req, res) => {
       error: 'Ошибка сервера'
     });
   }
+});
+
+// POST /api/v1/auth/refresh — обновление access token через refresh token
+router.post('/refresh', async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        error: 'Токен обновления отсутствует'
+      });
+    }
+
+    // Верифицируем refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+
+    // Находим пользователя
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Пользователь не найден'
+      });
+    }
+
+    // Генерируем новый access token
+    const newAccessToken = user.generateToken();
+
+    // Генерируем новый refresh token (ротация)
+    const newRefreshToken = user.generateRefreshToken();
+
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({
+      success: true,
+      data: {
+        token: newAccessToken
+      }
+    });
+  } catch (error) {
+    // Refresh token истёк или невалиден
+    res.clearCookie('refreshToken');
+    return res.status(401).json({
+      success: false,
+      error: 'Сессия истекла. Войдите снова'
+    });
+  }
+});
+
+// POST /api/v1/auth/logout — очистка refresh cookie
+router.post('/logout', (req, res) => {
+  res.clearCookie('refreshToken');
+  res.json({ success: true, data: 'OK' });
 });
 
 // GET /api/v1/auth/me
