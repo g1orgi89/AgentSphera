@@ -149,6 +149,7 @@
   width: 100%;
   overflow-x: auto;
   margin-bottom: 16px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .import-preview-table table {
@@ -266,4 +267,65 @@
 .import-btn-save:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* === Мобильная адаптация === */
+
+@media (max-width: 768px) {
+  .import-overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .import-modal {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    padding: 20px 16px;
+  }
+
+  .import-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .import-dropzone {
+    padding: 28px 16px;
+  }
+
+  .import-sheet-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .import-preview-table {
+    margin-left: -16px;
+    margin-right: -16px;
+    width: calc(100% + 32px);
+  }
+
+  .import-preview-table table {
+    font-size: 0.75rem;
+  }
+
+  .import-preview-table th {
+    padding: 6px 8px;
+    font-size: 0.65rem;
+  }
+
+  .import-preview-table td {
+    padding: 6px 8px;
+    max-width: 100px;
+  }
+
+  .import-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .import-actions button {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
 }

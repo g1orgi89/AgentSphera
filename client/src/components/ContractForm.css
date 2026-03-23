@@ -430,3 +430,62 @@
   border-radius: 4px;
   font-weight: 700;
 }
+
+/* === Мобильная адаптация === */
+
+@media (max-width: 768px) {
+  .contract-form-overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .contract-form-modal {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+    padding: 20px 16px;
+    min-height: 100vh;
+  }
+
+  .contract-form-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .contract-form-steps {
+    gap: 2px;
+  }
+
+  .contract-form-step {
+    padding: 6px 4px;
+    font-size: 0.7rem;
+  }
+
+  .contract-form-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .contract-client-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .installment-item {
+    flex-wrap: wrap;
+  }
+
+  .installment-field {
+    min-width: 0;
+  }
+
+  .contract-form-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .contract-form-actions button {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+}

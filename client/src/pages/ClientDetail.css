@@ -36,7 +36,14 @@
   margin-bottom: 16px;
 }
 
-/* Назад */
+/* Навигация */
+
+.cd-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
 
 .cd-back-link {
   display: inline-flex;
@@ -44,7 +51,6 @@
   gap: 6px;
   font-size: 0.875rem;
   color: var(--text-light);
-  margin-bottom: 20px;
   transition: color 0.2s;
 }
 
@@ -892,19 +898,20 @@ a.cd-contact:hover {
     padding: 0;
   }
 
-  .cd-back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+  .cd-nav-row {
     padding: 12px 12px 0;
     margin-bottom: 0;
+    gap: 8px;
+  }
+
+  .cd-back-link {
     font-size: 0.75rem;
     font-weight: 700;
     color: #fff;
     background: var(--pri);
     border-radius: 8px;
-    margin: 12px 12px 0;
     padding: 8px 12px;
+    margin-bottom: 0;
   }
 
   .cd-back-link:hover {
