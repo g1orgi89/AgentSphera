@@ -32,9 +32,10 @@ router.get('/totals', async (req, res) => {
 // GET /api/v1/contracts — список с поиском, фильтрами, сортировкой, пагинацией
 router.get('/', async (req, res) => {
   try {
-    const { search, company, type, objectType, status, sort, page, limit } = req.query;
+    const { search, clientId, company, type, objectType, status, sort, page, limit } = req.query;
     const result = await contractService.getContracts(req.user._id, {
       search,
+      clientId,
       company,
       type,
       objectType,

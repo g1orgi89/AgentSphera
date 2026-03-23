@@ -9,9 +9,10 @@ router.use(protect);
 // GET /api/v1/tasks — список с фильтрами, сортировкой, пагинацией
 router.get('/', async (req, res) => {
   try {
-    const { filter, sort, page, limit } = req.query;
+    const { filter, clientId, sort, page, limit } = req.query;
     const result = await taskService.getTasks(req.user._id, {
       filter,
+      clientId,
       sort,
       page,
       limit

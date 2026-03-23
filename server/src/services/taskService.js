@@ -5,9 +5,14 @@ const Client = require('../models/Client');
  * Получить список задач с фильтрацией, сортировкой и пагинацией
  */
 const getTasks = async (userId, query = {}) => {
-  const { filter, sort = '-createdAt', page = 1, limit = 50 } = query;
+  const { filter, clientId, sort = '-createdAt', page = 1, limit = 50 } = query;
 
   const dbFilter = { userId };
+
+  // Фильтр по клиенту
+  if (clientId) {
+    dbFilter.clientId = clientId;
+  }
 
   // Фильтр: all / active / done
   if (filter === 'active') {

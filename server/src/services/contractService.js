@@ -7,6 +7,7 @@ const Client = require('../models/Client');
 const getContracts = async (userId, query = {}) => {
   const {
     search,
+    clientId,
     company,
     type,
     objectType,
@@ -17,6 +18,11 @@ const getContracts = async (userId, query = {}) => {
   } = query;
 
   const filter = { userId };
+
+  // Фильтр по клиенту
+  if (clientId) {
+    filter.clientId = clientId;
+  }
 
   // Фильтр по страховой компании
   if (company && company.trim()) {
