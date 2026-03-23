@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
+import PWAInstallPrompt from './PWAInstallPrompt';
 import './Sidebar.css';
 
 /* === SVG-иконки === */
@@ -141,7 +142,7 @@ function Sidebar({ collapsed, onMobileClose, isMobileDrawer }) {
         ))}
       </nav>
 
-      {/* Нижняя часть: пользователь + выход */}
+      {/* Нижняя часть: пользователь + установка + выход */}
       <div className="sidebar-bottom">
         <div className="sidebar-user" title={user?.name || ''}>
           <div className="sidebar-avatar">{getInitials(user?.name)}</div>
@@ -152,6 +153,7 @@ function Sidebar({ collapsed, onMobileClose, isMobileDrawer }) {
             </div>
           )}
         </div>
+        {!collapsed && <PWAInstallPrompt />}
         <button
           className="sidebar-logout-btn"
           onClick={logout}
