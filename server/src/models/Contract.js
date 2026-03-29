@@ -96,6 +96,10 @@ const contractSchema = new mongoose.Schema(
       min: [0, 'Комиссия не может быть отрицательной'],
       default: 0
     },
+    accrualCommission: {
+      type: Number,
+      default: 0
+    },
     installments: {
       type: [installmentSchema],
       validate: {
