@@ -1,0 +1,17 @@
+/* Начисленное КВ (под ожидаемым в той же ячейке) */
+
+.ct-accrual {
+  font-size: 0.6875rem;
+  color: var(--acc);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* Подсказка уверенности в актах */
+
+.acts-confidence-hint {
+  color: var(--acc);
+  font-weight: 700;
+  font-size: 0.75rem;
+  cursor: help;
+}
