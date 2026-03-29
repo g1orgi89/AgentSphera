@@ -28,20 +28,21 @@ function Clients() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Фильтры
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [sort, setSort] = useState('-createdAt');
 
-  // Пагинация
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
 
-  // Модальная форма
   const [showForm, setShowForm] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
 
-  // Экспорт
   const [exporting, setExporting] = useState(false);
+
+  // --- Дубликаты ---
+  const [duplicates, setDuplicates] = useState([]);
+  const [showDuplicates, setShowDuplicates] = useState(false);
+  const [merging, setMerging] = useState(false);
 
   const fetchClients = useCallback(async (page = 1) => {
     setLoading(true);
@@ -61,11 +62,21 @@ function Clients() {
     }
   }, [search, status, sort]);
 
+  const fetchDuplicates = useCallback(async () => {
+    try {
+      const res = await api.get('/clients/duplicates');
+      setDuplicates(res.data.data || []);
+    } catch {}
+  }, []);
+
   useEffect(() => {
     fetchClients(1);
   }, [fetchClients]);
 
-  // Дебаунс поиска
+  useEffect(() => {
+    fetchDuplicates();
+  }, [fetchDuplicates]);
+
   const [searchInput, setSearchInput] = useState('');
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -92,6 +103,7 @@ function Clients() {
       await api.delete(`/clients/${clientId}`);
       toast.success('Клиент удалён');
       fetchClients(pagination.page);
+      fetchDuplicates();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Ошибка удаления');
     }
@@ -113,6 +125,7 @@ function Clients() {
       setShowForm(false);
       setEditingClient(null);
       fetchClients(pagination.page);
+      fetchDuplicates();
     } catch (err) {
       throw err;
     }
@@ -142,6 +155,24 @@ function Clients() {
     }
   };
 
+  const handleMerge = async (keepId, removeId) => {
+    setMerging(true);
+    try {
+      await api.post('/clients/merge', { keepId, removeId });
+      toast.success('Клиенты объединены');
+      fetchClients(pagination.page);
+      fetchDuplicates();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Ошибка объединения');
+    } finally {
+      setMerging(false);
+    }
+  };
+
+  const handleSkipDuplicate = (normalizedName) => {
+    setDuplicates(prev => prev.filter(d => d.normalizedName !== normalizedName));
+  };
+
   return (
     <div className="clients-page">
       <div className="clients-header">
@@ -168,6 +199,22 @@ function Clients() {
           </button>
         </div>
       </div>
+
+      {/* Баннер дубликатов */}
+      {duplicates.length > 0 && (
+        <div className="clients-duplicates-banner">
+          <div className="clients-duplicates-banner-text">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M9 5.5v4M9 12v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            Найдено {duplicates.length} групп(ы) возможных дубликатов клиентов
+          </div>
+          <button className="clients-duplicates-btn" onClick={() => setShowDuplicates(true)}>
+            Просмотреть
+          </button>
+        </div>
+      )}
 
       <div className="clients-toolbar">
         <div className="clients-search">
@@ -259,6 +306,71 @@ function Clients() {
           onSubmit={handleFormSubmit}
           onClose={() => { setShowForm(false); setEditingClient(null); }}
         />
+      )}
+
+      {/* Модалка дубликатов */}
+      {showDuplicates && (
+        <div className="duplicates-overlay">
+          <div className="duplicates-modal">
+            <div className="duplicates-header">
+              <h2>Возможные дубликаты</h2>
+              <button className="duplicates-close" onClick={() => setShowDuplicates(false)}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5 5l10 10M15 5l-10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            {duplicates.length === 0 ? (
+              <div className="duplicates-empty">Дубликатов не найдено</div>
+            ) : (
+              <div className="duplicates-list">
+                {duplicates.map((group, gIdx) => (
+                  <div key={gIdx} className="duplicates-group">
+                    <div className="duplicates-group-header">
+                      Группа: {group.clients.length} записей
+                    </div>
+                    <div className="duplicates-group-clients">
+                      {group.clients.map((client, cIdx) => (
+                        <div key={client._id} className="duplicates-client">
+                          <div className="duplicates-client-info">
+                            <span className="duplicates-client-name">{client.name}</span>
+                            <span className="duplicates-client-meta">
+                              {client.phone && `Тел: ${client.phone}`}
+                              {client.email && ` | ${client.email}`}
+                              {` | Договоров: ${client.contractCount || 0}`}
+                            </span>
+                          </div>
+                          {cIdx > 0 && (
+                            <div className="duplicates-client-actions">
+                              <button
+                                className="duplicates-merge-btn"
+                                onClick={() => handleMerge(group.clients[0]._id, client._id)}
+                                disabled={merging}
+                                title={`Объединить с "${group.clients[0].name}"`}
+                              >
+                                {merging ? '...' : 'Объединить'}
+                              </button>
+                            </div>
+                          )}
+                          {cIdx === 0 && (
+                            <div className="duplicates-client-badge">Основной</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      className="duplicates-skip-btn"
+                      onClick={() => handleSkipDuplicate(group.normalizedName)}
+                    >
+                      Пропустить
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
