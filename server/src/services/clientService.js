@@ -3,16 +3,15 @@ const Client = require('../models/Client');
 
 // --- Юридические формы для удаления ---
 const LEGAL_FORMS = ['ооо', 'оао', 'зао', 'ао', 'пао', 'ип', 'мбу', 'гбусо', 'гбу', 'муп', 'мку', 'фгуп', 'фгбу', 'гуп', 'нко', 'анко', 'тсж', 'сз'];
+// Сортированные по длине (длинные первыми — чтобы "гбусо" проверялось раньше "гбу")
+const LEGAL_FORMS_SORTED = [...LEGAL_FORMS].sort((a, b) => b.length - a.length);
 
-/**
- * Базовая нормализация имени
- */
 function normalizeBasic(name) {
   if (!name) return '';
   let n = String(name).trim();
-  n = n.replace(/\s*\[[\d\s]*\]\s*$/g, '');  // [12345]
-  n = n.replace(/[\u00ab\u00bb\u201c\u201d\u2018\u2019"']/g, ''); // кавычки
-  n = n.replace(/\u0451/g, '\u0435').replace(/\u0401/g, '\u0415'); // ё→е
+  n = n.replace(/\s*\[[\d\s]*\]\s*$/g, '');
+  n = n.replace(/[«»""'']/g, '');
+  n = n.replace(/ё/g, 'е').replace(/Ё/g, 'Е');
   n = n.replace(/\s+/g, ' ');
   return n.toLowerCase().trim();
 }
@@ -20,61 +19,49 @@ function normalizeBasic(name) {
 /**
  * Глубокая нормализация — убирает юр. формы, пробелы, пунктуацию
  * "ООО БЛОКСТРОЙ" → "блокстрой"
- * "ОООБЛОКСТРОЙ" → "блокстрой"
+ * "ОООБЛОКСТРОЙ" → "блокстрой"  (слитно — убирается как префикс)
+ * "БЛОКСТРОЙ" → "блокстрой"
  * "СПЕЦ ЭНЕРГО СТРОЙ" → "спецэнергострой"
  */
 function normalizeDeep(name) {
   let n = normalizeBasic(name);
-  // Убрать юр. формы как отдельные слова
+  // Шаг 1: убрать юр. формы как отдельные слова
   for (const form of LEGAL_FORMS) {
     n = n.replace(new RegExp('(^|\\s)' + form + '(\\s|$)', 'g'), ' ');
   }
-  // Убрать ВСЕ пробелы, точки, дефисы, запятые
+  // Шаг 2: убрать ВСЕ пробелы, точки, дефисы, запятые, скобки
   n = n.replace(/[\s.\-,()]/g, '');
+  // Шаг 3: убрать юр. форму как префикс (для слитного написания "оооблокстрой")
+  for (const form of LEGAL_FORMS_SORTED) {
+    if (n.startsWith(form) && n.length > form.length) {
+      n = n.slice(form.length);
+      break;
+    }
+  }
   return n;
 }
 
-/**
- * Извлечь фамилию + инициалы из сокращённого имени
- * "Петров А.И." → { surname: "петров", initials: ["а", "и"] }
- * "Петров Александр Иванович" → { surname: "петров", initials: ["а", "и"], fullParts: ["александр", "иванович"] }
- */
 function extractNameParts(name) {
   const n = normalizeBasic(name);
   const parts = n.split(/\s+/).filter(p => p.length > 0);
   if (parts.length < 2) return null;
-
   const surname = parts[0];
   const rest = parts.slice(1);
-
-  // Проверяем есть ли инициалы (1 буква, возможно с точкой)
   const initials = [];
   const fullParts = [];
   let hasAbbreviation = false;
-
   for (const p of rest) {
     const clean = p.replace(/\./g, '');
-    if (clean.length === 1) {
-      initials.push(clean);
-      hasAbbreviation = true;
-    } else if (clean.length === 2 && !p.includes('.')) {
-      // "АИ" → два инициала слитно
-      initials.push(clean[0], clean[1]);
-      hasAbbreviation = true;
-    } else {
-      fullParts.push(clean);
-      initials.push(clean[0]); // первая буква полного имени как инициал
-    }
+    if (clean.length === 1) { initials.push(clean); hasAbbreviation = true; }
+    else if (clean.length === 2 && !p.includes('.')) { initials.push(clean[0], clean[1]); hasAbbreviation = true; }
+    else { fullParts.push(clean); initials.push(clean[0]); }
   }
-
   return { surname, initials, fullParts, hasAbbreviation };
 }
 
 function mergeField(a, b) {
-  a = (a || '').trim();
-  b = (b || '').trim();
-  if (!a) return b;
-  if (!b) return a;
+  a = (a || '').trim(); b = (b || '').trim();
+  if (!a) return b; if (!b) return a;
   if (a.toLowerCase() === b.toLowerCase()) return a;
   return `${a}, ${b}`;
 }
@@ -92,35 +79,23 @@ const getClients = async (userId, query = {}) => {
   if (status && ['active', 'potential', 'inactive'].includes(status)) filter.status = status;
   if (search && search.trim()) {
     const s = search.trim();
-    filter.$or = [
-      { name: { $regex: s, $options: 'i' } },
-      { phone: { $regex: s, $options: 'i' } },
-      { email: { $regex: s, $options: 'i' } }
-    ];
+    filter.$or = [{ name: { $regex: s, $options: 'i' } }, { phone: { $regex: s, $options: 'i' } }, { email: { $regex: s, $options: 'i' } }];
   }
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
   const skip = (pageNum - 1) * limitNum;
   const sortObj = {};
-  if (sort.startsWith('-')) sortObj[sort.slice(1)] = -1;
-  else sortObj[sort] = 1;
-  const [clients, total] = await Promise.all([
-    Client.find(filter).sort(sortObj).skip(skip).limit(limitNum),
-    Client.countDocuments(filter)
-  ]);
+  if (sort.startsWith('-')) sortObj[sort.slice(1)] = -1; else sortObj[sort] = 1;
+  const [clients, total] = await Promise.all([Client.find(filter).sort(sortObj).skip(skip).limit(limitNum), Client.countDocuments(filter)]);
   return { clients, pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) } };
 };
 
-const getClientById = async (userId, clientId) => {
-  return await Client.findOne({ _id: clientId, userId });
-};
+const getClientById = async (userId, clientId) => { return await Client.findOne({ _id: clientId, userId }); };
 
 const createClient = async (userId, data) => {
   const { name, phone, email, birthday, preferredContact, status, note, link } = data;
   let duplicate = null;
-  if (name && name.trim()) {
-    duplicate = await Client.findOne({ userId, name: { $regex: new RegExp(`^${escapeRegex(name.trim())}$`, 'i') } });
-  }
+  if (name && name.trim()) { duplicate = await Client.findOne({ userId, name: { $regex: new RegExp(`^${escapeRegex(name.trim())}$`, 'i') } }); }
   const client = await Client.create({ userId, name, phone: phone || '', email: email || '', birthday: birthday || null, preferredContact: preferredContact || '', status: status || 'active', note: note || '', link: link || '' });
   return { client, warning: duplicate ? `Клиент с именем "${duplicate.name}" уже существует (ID: ${duplicate._id})` : null };
 };
@@ -153,10 +128,7 @@ const getClientSummary = async (userId, clientId) => {
       if (c.commissionType === '%') summary.totalCommission += Math.round((c.premium || 0) * (c.commissionValue || 0) / 100);
       else summary.totalCommission += c.commissionValue || 0;
       if (!c.endDate || c.endDate >= now) summary.activeContracts++;
-      if (c.installments && c.installments.length > 0) {
-        summary.totalInstallments += c.installments.length;
-        summary.totalPaidInstallments += c.installments.filter(i => i.paid).length;
-      }
+      if (c.installments && c.installments.length > 0) { summary.totalInstallments += c.installments.length; summary.totalPaidInstallments += c.installments.filter(i => i.paid).length; }
     }
   } catch (e) {}
   return summary;
@@ -168,7 +140,6 @@ const findDuplicates = async (userId) => {
   const allClients = await Client.find({ userId }).lean();
   const Contract = mongoose.model('Contract');
 
-  // Подготовка данных
   const clientData = allClients.map(c => ({
     ...c,
     basic: normalizeBasic(c.name),
@@ -177,7 +148,7 @@ const findDuplicates = async (userId) => {
     bd: formatBirthday(c.birthday)
   }));
 
-  const matched = new Set(); // уже сгруппированные ID
+  const matched = new Set();
   const duplicates = [];
 
   // Уровень 1+2: группировка по deep ключу
@@ -190,33 +161,28 @@ const findDuplicates = async (userId) => {
 
   for (const [key, clients] of Object.entries(deepGroups)) {
     if (clients.length < 2) continue;
-
-    // Проверяем тёзок — разные ДР = разные люди
+    // Проверяем тёзок
     const subgroups = [];
     for (const c of clients) {
       let placed = false;
       for (const sg of subgroups) {
         const first = sg[0];
-        if (first.bd && c.bd && first.bd !== c.bd) continue; // разные ДР — тёзки
-        sg.push(c);
-        placed = true;
-        break;
+        if (first.bd && c.bd && first.bd !== c.bd) continue;
+        sg.push(c); placed = true; break;
       }
       if (!placed) subgroups.push([c]);
     }
-
     for (const sg of subgroups) {
       if (sg.length < 2) continue;
       for (const c of sg) matched.add(String(c._id));
       duplicates.push({
-        normalizedName: key,
-        matchType: 'deep',
+        normalizedName: key, matchType: 'deep',
         clients: sg.map(c => ({ _id: c._id, name: c.name, phone: c.phone, email: c.email, birthday: c.birthday, status: c.status, createdAt: c.createdAt }))
       });
     }
   }
 
-  // Уровень 3: сокращения — "Петров А.И." vs "Петров Александр Иванович"
+  // Уровень 3: сокращения
   const withParts = clientData.filter(c => c.parts && !matched.has(String(c._id)));
   const abbreviated = withParts.filter(c => c.parts.hasAbbreviation);
   const fullNames = withParts.filter(c => !c.parts.hasAbbreviation && c.parts.fullParts.length >= 1);
@@ -225,20 +191,13 @@ const findDuplicates = async (userId) => {
     for (const full of fullNames) {
       if (matched.has(String(abbr._id)) && matched.has(String(full._id))) continue;
       if (abbr.parts.surname !== full.parts.surname) continue;
-
-      // Сравниваем инициалы
       const abbrInit = abbr.parts.initials.join('');
       const fullInit = full.parts.initials.join('');
       if (abbrInit !== fullInit) continue;
-
-      // Проверка тёзок
       if (abbr.bd && full.bd && abbr.bd !== full.bd) continue;
-
-      matched.add(String(abbr._id));
-      matched.add(String(full._id));
+      matched.add(String(abbr._id)); matched.add(String(full._id));
       duplicates.push({
-        normalizedName: abbr.parts.surname,
-        matchType: 'abbreviation',
+        normalizedName: abbr.parts.surname, matchType: 'abbreviation',
         clients: [
           { _id: full._id, name: full.name, phone: full.phone, email: full.email, birthday: full.birthday, status: full.status, createdAt: full.createdAt },
           { _id: abbr._id, name: abbr.name, phone: abbr.phone, email: abbr.email, birthday: abbr.birthday, status: abbr.status, createdAt: abbr.createdAt }
@@ -247,7 +206,6 @@ const findDuplicates = async (userId) => {
     }
   }
 
-  // Загрузить кол-во договоров
   for (const group of duplicates) {
     for (const client of group.clients) {
       client.contractCount = await Contract.countDocuments({ userId, clientId: client._id });
