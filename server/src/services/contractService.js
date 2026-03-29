@@ -2,6 +2,24 @@ const Contract = require('../models/Contract');
 const Client = require('../models/Client');
 
 /**
+ * Применить фильтр по дате (dateFrom/dateTo) к filter объекту
+ */
+function applyDateFilter(filter, dateFrom, dateTo) {
+  if (dateFrom || dateTo) {
+    const dateFilter = {};
+    if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+    if (dateTo) {
+      const to = new Date(dateTo);
+      to.setHours(23, 59, 59, 999);
+      dateFilter.$lte = to;
+    }
+    if (Object.keys(dateFilter).length > 0) {
+      filter.startDate = { ...filter.startDate, ...dateFilter };
+    }
+  }
+}
+
+/**
  * Получить список договоров с поиском, фильтрацией, сортировкой и пагинацией
  */
 const getContracts = async (userId, query = {}) => {
@@ -12,6 +30,8 @@ const getContracts = async (userId, query = {}) => {
     type,
     objectType,
     status,
+    dateFrom,
+    dateTo,
     sort = '-createdAt',
     page = 1,
     limit = 20
@@ -38,6 +58,9 @@ const getContracts = async (userId, query = {}) => {
   if (objectType && ['auto', 'realty', 'life'].includes(objectType)) {
     filter.objectType = objectType;
   }
+
+  // Фильтр по датам (период)
+  applyDateFilter(filter, dateFrom, dateTo);
 
   // Фильтр по статусу (виртуальное поле — фильтруем через даты)
   if (status) {
@@ -77,7 +100,6 @@ const getContracts = async (userId, query = {}) => {
       { type: { $regex: s, $options: 'i' } }
     ];
 
-    // Поиск по имени клиента — находим clientId
     const matchingClients = await Client.find({
       userId,
       name: { $regex: s, $options: 'i' }
@@ -89,7 +111,6 @@ const getContracts = async (userId, query = {}) => {
       });
     }
 
-    // Если уже есть $or от фильтра статуса, комбинируем через $and
     if (filter.$or) {
       const statusOr = filter.$or;
       delete filter.$or;
@@ -106,7 +127,6 @@ const getContracts = async (userId, query = {}) => {
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
   const skip = (pageNum - 1) * limitNum;
 
-  // Сортировка: "-premium" → { premium: -1 }
   const sortObj = {};
   if (sort.startsWith('-')) {
     sortObj[sort.slice(1)] = -1;
@@ -164,7 +184,6 @@ const createContract = async (userId, data) => {
     link
   } = data;
 
-  // Проверяем что клиент существует и принадлежит пользователю
   const client = await Client.findOne({ _id: clientId, userId });
   if (!client) {
     const err = new Error('Клиент не найден');
@@ -190,7 +209,6 @@ const createContract = async (userId, data) => {
     link: link || ''
   });
 
-  // Populate clientId для ответа
   await contract.populate('clientId', 'name phone email');
 
   return contract;
@@ -214,7 +232,6 @@ const updateContract = async (userId, contractId, data) => {
     }
   }
 
-  // Если меняется clientId — проверяем что новый клиент принадлежит пользователю
   if (updates.clientId) {
     const client = await Client.findOne({ _id: updates.clientId, userId });
     if (!client) {
@@ -291,7 +308,7 @@ const updateInstallment = async (userId, contractId, installmentIdx, data) => {
  * Итого: суммы, средний чек, КВ
  */
 const getTotals = async (userId, query = {}) => {
-  const { company, type, objectType, status } = query;
+  const { company, type, objectType, status, dateFrom, dateTo } = query;
 
   const filter = { userId };
 
@@ -306,6 +323,9 @@ const getTotals = async (userId, query = {}) => {
   if (objectType && ['auto', 'realty', 'life'].includes(objectType)) {
     filter.objectType = objectType;
   }
+
+  // Фильтр по датам
+  applyDateFilter(filter, dateFrom, dateTo);
 
   if (status) {
     const now = new Date();
@@ -331,20 +351,21 @@ const getTotals = async (userId, query = {}) => {
 
   let totalPremium = 0;
   let totalCommission = 0;
+  let totalAccrualCommission = 0;
   let totalPaidInstallments = 0;
   let totalInstallments = 0;
 
   for (const c of contracts) {
     totalPremium += c.premium || 0;
 
-    // Комиссия
     if (c.commissionType === '%') {
       totalCommission += Math.round((c.premium || 0) * (c.commissionValue || 0) / 100);
     } else {
       totalCommission += c.commissionValue || 0;
     }
 
-    // Взносы
+    totalAccrualCommission += c.accrualCommission || 0;
+
     if (c.installments && c.installments.length > 0) {
       totalInstallments += c.installments.length;
       totalPaidInstallments += c.installments.filter(i => i.paid).length;
@@ -357,6 +378,7 @@ const getTotals = async (userId, query = {}) => {
     count,
     totalPremium,
     totalCommission,
+    totalAccrualCommission,
     averagePremium: count > 0 ? Math.round(totalPremium / count) : 0,
     totalInstallments,
     totalPaidInstallments
