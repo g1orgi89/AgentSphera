@@ -30,6 +30,25 @@ const HEADER_MAP = {
   'страховая сумма': 'sumInsured'
 };
 
+// --- Нормализация имени клиента ---
+
+function normalizeName(name) {
+  if (!name) return '';
+  let n = String(name).trim();
+  // Убрать [число] в конце (ID из другой системы)
+  n = n.replace(/\s*\[[\d\s]*\]\s*$/g, '');
+  // Убрать кавычки «», "", ''
+  n = n.replace(/[«»""'']/g, '');
+  // Убрать двойные пробелы
+  n = n.replace(/\s+/g, ' ');
+  return n.trim();
+}
+
+// Нормализация для сравнения (lowercase + normalizeName)
+function normalizeNameForCompare(name) {
+  return normalizeName(name).toLowerCase();
+}
+
 // Автоопределение objectType по виду договора
 function detectObjectType(type) {
   if (!type) return null;
@@ -76,6 +95,13 @@ function cleanString(val) {
   return String(val).trim();
 }
 
+// Определить, похоже ли значение на ФИО (содержит кириллицу и пробел)
+function looksLikeName(val) {
+  if (!val || typeof val !== 'string') return false;
+  const s = val.trim();
+  return s.length >= 3 && /[а-яА-ЯёЁ]/.test(s) && /\s/.test(s);
+}
+
 // --- Получить список листов ---
 
 function getSheetNames(buffer) {
@@ -107,23 +133,49 @@ function parseSheet(buffer, sheetName) {
 
   // Маппинг колонок
   const mapping = {};
+  const usedFields = new Set();
+
   headers.forEach((h, idx) => {
     const key = h.toLowerCase().replace(/[\s.]+/g, ' ').trim();
+    // Пропускаем пустые заголовки — обработаем отдельно
+    if (!key) return;
+
     // Прямое совпадение
-    if (HEADER_MAP[key]) {
+    if (HEADER_MAP[key] && !usedFields.has(HEADER_MAP[key])) {
       mapping[idx] = { field: HEADER_MAP[key], header: h };
+      usedFields.add(HEADER_MAP[key]);
       return;
     }
     // Частичное совпадение
     for (const [pattern, field] of Object.entries(HEADER_MAP)) {
+      if (usedFields.has(field)) continue;
       if (key.includes(pattern) || pattern.includes(key)) {
-        if (!Object.values(mapping).some(m => m.field === field)) {
-          mapping[idx] = { field, header: h };
-          return;
-        }
+        mapping[idx] = { field, header: h };
+        usedFields.add(field);
+        return;
       }
     }
   });
+
+  // Если clientName не найден — ищем колонку с пустым заголовком, содержащую ФИО
+  if (!usedFields.has('clientName')) {
+    for (let idx = 0; idx < headers.length; idx++) {
+      if (mapping[idx]) continue; // уже замаплена
+      const key = headers[idx].trim();
+      if (key.length > 3) continue; // не пустой заголовок
+
+      // Проверяем первые 5 строк данных — есть ли там ФИО-подобные значения
+      let nameCount = 0;
+      for (let r = headerRow + 1; r < Math.min(raw.length, headerRow + 6); r++) {
+        if (looksLikeName(raw[r][idx])) nameCount++;
+      }
+      if (nameCount >= 2) {
+        mapping[idx] = { field: 'clientName', header: 'ФИО (авто)' };
+        usedFields.add('clientName');
+        break;
+      }
+    }
+  }
 
   // Парсим строки
   const rows = [];
@@ -145,6 +197,20 @@ function parseSheet(buffer, sheetName) {
       }
     }
 
+    // Нормализовать имя клиента (убрать [id], кавычки)
+    if (parsed.clientName) {
+      parsed.clientName = normalizeName(parsed.clientName);
+    }
+
+    // Если endDate < startDate — поменять местами (частая ошибка в данных)
+    if (parsed.startDate && parsed.endDate) {
+      if (new Date(parsed.endDate) < new Date(parsed.startDate)) {
+        const tmp = parsed.startDate;
+        parsed.startDate = parsed.endDate;
+        parsed.endDate = tmp;
+      }
+    }
+
     // Пропускаем пустые строки (нет ни имени, ни номера, ни компании)
     if (!parsed.clientName && !parsed.number && !parsed.company) continue;
 
@@ -162,6 +228,14 @@ function parseSheet(buffer, sheetName) {
 async function saveImport(rows, userId) {
   const results = { created: 0, skipped: 0, errors: [], clientsCreated: 0, clientsFound: 0 };
 
+  // Предзагружаем всех клиентов пользователя для быстрого сравнения
+  const allClients = await Client.find({ userId });
+  const clientMap = new Map(); // normalizedName → client
+  for (const c of allClients) {
+    const key = normalizeNameForCompare(c.name);
+    if (key) clientMap.set(key, c);
+  }
+
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     try {
@@ -169,11 +243,10 @@ async function saveImport(rows, userId) {
       let clientId = null;
 
       if (row.clientName) {
-        const nameQuery = row.clientName.trim();
-        let client = await Client.findOne({
-          userId,
-          name: { $regex: new RegExp('^' + nameQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') }
-        });
+        const normalizedSearch = normalizeNameForCompare(row.clientName);
+
+        // Ищем по нормализованному имени в предзагруженном кэше
+        let client = clientMap.get(normalizedSearch);
 
         if (client) {
           results.clientsFound++;
@@ -185,10 +258,16 @@ async function saveImport(rows, userId) {
           if (updated) await client.save();
           clientId = client._id;
         } else {
-          // Создать нового клиента
+          // Создать нового клиента с нормализованным именем
+          const cleanName = normalizeName(row.clientName);
+          if (cleanName.length < 2) {
+            results.skipped++;
+            results.errors.push({ row: i + 1, error: `Имя "${row.clientName}" слишком короткое после очистки` });
+            continue;
+          }
           const newClient = await Client.create({
             userId,
-            name: nameQuery,
+            name: cleanName,
             phone: row.clientPhone || '',
             email: row.clientEmail || '',
             birthday: row.clientBirthday || null,
@@ -196,6 +275,8 @@ async function saveImport(rows, userId) {
           });
           clientId = newClient._id;
           results.clientsCreated++;
+          // Добавить в кэш
+          clientMap.set(normalizedSearch, newClient);
         }
       }
 
@@ -270,5 +351,7 @@ async function saveImport(rows, userId) {
 module.exports = {
   getSheetNames,
   parseSheet,
-  saveImport
+  saveImport,
+  normalizeName,
+  normalizeNameForCompare
 };
