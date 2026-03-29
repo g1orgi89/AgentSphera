@@ -6,6 +6,37 @@ const clientService = require('../services/clientService');
 // Все роуты защищены авторизацией
 router.use(protect);
 
+// GET /api/v1/clients/duplicates — найти дубликаты
+router.get('/duplicates', async (req, res) => {
+  try {
+    const duplicates = await clientService.findDuplicates(req.user._id);
+    res.json({ success: true, data: duplicates });
+  } catch (error) {
+    console.error('Find duplicates error:', error);
+    res.status(500).json({ success: false, error: 'Ошибка поиска дубликатов' });
+  }
+});
+
+// POST /api/v1/clients/merge — объединить двух клиентов
+router.post('/merge', async (req, res) => {
+  try {
+    const { keepId, removeId } = req.body;
+
+    if (!keepId || !removeId) {
+      return res.status(400).json({ success: false, error: 'Укажите keepId и removeId' });
+    }
+
+    const client = await clientService.mergeClients(req.user._id, keepId, removeId);
+    res.json({ success: true, data: client });
+  } catch (error) {
+    console.error('Merge clients error:', error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ success: false, error: error.message });
+    }
+    res.status(500).json({ success: false, error: 'Ошибка объединения клиентов' });
+  }
+});
+
 // GET /api/v1/clients — список с поиском, фильтрами, сортировкой, пагинацией
 router.get('/', async (req, res) => {
   try {
@@ -48,7 +79,6 @@ router.get('/:id', async (req, res) => {
       data: client
     });
   } catch (error) {
-    // Невалидный ObjectId
     if (error.kind === 'ObjectId') {
       return res.status(404).json({
         success: false,
@@ -65,7 +95,6 @@ router.get('/:id', async (req, res) => {
 // GET /api/v1/clients/:id/summary — сводка клиента
 router.get('/:id/summary', async (req, res) => {
   try {
-    // Проверяем что клиент существует и принадлежит пользователю
     const client = await clientService.getClientById(req.user._id, req.params.id);
 
     if (!client) {
@@ -105,14 +134,12 @@ router.post('/', async (req, res) => {
       data: result.client
     };
 
-    // Предупреждение о дубликате (не блокировка)
     if (result.warning) {
       response.warning = result.warning;
     }
 
     res.status(201).json(response);
   } catch (error) {
-    // Mongoose validation errors
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map(e => e.message);
       return res.status(400).json({
