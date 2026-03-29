@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const { protect } = require('../middleware/auth');
 const Act = require('../models/Act');
+const Contract = require('../models/Contract');
 const {
   extractTextFromFile,
   parseWithClaude,
@@ -40,7 +41,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
 // --- GET /acts — список актов ---
@@ -49,7 +50,6 @@ router.get('/', async (req, res) => {
   try {
     const acts = await Act.find({ userId: req.user._id })
       .sort({ date: -1 });
-
     res.json({ success: true, data: acts });
   } catch (error) {
     console.error('Get acts error:', error);
@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// --- POST /acts — создать акт (ручной ввод или сохранение после предпросмотра) ---
+// --- POST /acts — создать акт ---
 
 router.post('/', async (req, res) => {
   try {
@@ -71,7 +71,6 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Добавьте хотя бы одну строку' });
     }
 
-    // Если source === 'manual' и items ещё не сверены — сверяем
     let finalItems = items;
     if (source === 'manual' || !items[0].status) {
       finalItems = await reconcileItems(
@@ -93,9 +92,8 @@ router.post('/', async (req, res) => {
       items: finalItems
     });
 
-    // Обновить accrualCommission на найденных договорах (накопительно, += actualAmount)
     const updatedCount = await updateAccrualCommissions(finalItems, req.user._id);
-    console.log(`Act saved: ${finalItems.length} items, ${updatedCount} contracts updated with accrualCommission`);
+    console.log(`Act saved: ${finalItems.length} items, ${updatedCount} contracts updated`);
 
     res.status(201).json({ success: true, data: act });
   } catch (error) {
@@ -108,7 +106,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// --- POST /acts/upload — умный парсинг файла (предпросмотр, без сохранения) ---
+// --- POST /acts/upload — умный парсинг файла ---
 
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
@@ -122,7 +120,6 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ success: false, error: 'Укажите страховую компанию' });
     }
 
-    // 1. Извлечь текст из файла
     const text = await extractTextFromFile(
       req.file.buffer,
       req.file.mimetype,
@@ -133,7 +130,6 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ success: false, error: 'Не удалось извлечь текст из файла' });
     }
 
-    // 2. Отправить в Claude AI
     const parsedItems = await parseWithClaude(text);
 
     if (parsedItems.length === 0) {
@@ -143,10 +139,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       });
     }
 
-    // 3. Сверить с базой (нечёткий поиск)
     const reconciledItems = await reconcileItems(parsedItems, req.user._id);
-
-    // 4. Вернуть для предпросмотра (не сохраняя)
     const source = detectSource(req.file.mimetype, req.file.originalname);
 
     res.json({
@@ -177,11 +170,12 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// --- DELETE /acts/:id — удалить акт ---
+// --- DELETE /acts/:id — удалить акт (с откатом accrualCommission) ---
 
 router.delete('/:id', async (req, res) => {
   try {
-    const act = await Act.findOneAndDelete({
+    // Сначала находим акт (не удаляя)
+    const act = await Act.findOne({
       _id: req.params.id,
       userId: req.user._id
     });
@@ -189,6 +183,25 @@ router.delete('/:id', async (req, res) => {
     if (!act) {
       return res.status(404).json({ success: false, error: 'Акт не найден' });
     }
+
+    // Откатить accrualCommission: вычесть суммы обратно
+    if (act.items && act.items.length > 0) {
+      for (const item of act.items) {
+        if (item.contractId && item.status !== 'unknown' && item.actualAmount) {
+          try {
+            await Contract.findOneAndUpdate(
+              { _id: item.contractId, userId: req.user._id },
+              { $inc: { accrualCommission: -(item.actualAmount || 0) } }
+            );
+          } catch (e) {
+            console.error('Error rolling back accrualCommission:', e.message);
+          }
+        }
+      }
+    }
+
+    // Теперь удаляем акт
+    await Act.deleteOne({ _id: act._id });
 
     res.json({ success: true, data: {} });
   } catch (error) {

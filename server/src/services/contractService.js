@@ -2,20 +2,34 @@ const Contract = require('../models/Contract');
 const Client = require('../models/Client');
 
 /**
- * Применить фильтр по дате (dateFrom/dateTo) к filter объекту
+ * Применить фильтр по периоду (пересечение диапазонов)
+ * Показывает договоры, которые действовали в выбранном периоде:
+ * startDate <= dateTo AND (endDate >= dateFrom OR endDate is null)
  */
 function applyDateFilter(filter, dateFrom, dateTo) {
-  if (dateFrom || dateTo) {
-    const dateFilter = {};
-    if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-    if (dateTo) {
-      const to = new Date(dateTo);
-      to.setHours(23, 59, 59, 999);
-      dateFilter.$lte = to;
-    }
-    if (Object.keys(dateFilter).length > 0) {
-      filter.startDate = { ...filter.startDate, ...dateFilter };
-    }
+  if (!dateFrom && !dateTo) return;
+
+  const conditions = [];
+
+  if (dateTo) {
+    const to = new Date(dateTo);
+    to.setHours(23, 59, 59, 999);
+    conditions.push({ startDate: { $lte: to } });
+  }
+
+  if (dateFrom) {
+    const from = new Date(dateFrom);
+    conditions.push({
+      $or: [
+        { endDate: { $gte: from } },
+        { endDate: null }
+      ]
+    });
+  }
+
+  if (conditions.length > 0) {
+    if (!filter.$and) filter.$and = [];
+    filter.$and.push(...conditions);
   }
 }
 
@@ -39,30 +53,24 @@ const getContracts = async (userId, query = {}) => {
 
   const filter = { userId };
 
-  // Фильтр по клиенту
   if (clientId) {
     filter.clientId = clientId;
   }
 
-  // Фильтр по страховой компании
   if (company && company.trim()) {
     filter.company = { $regex: company.trim(), $options: 'i' };
   }
 
-  // Фильтр по типу договора
   if (type && type.trim()) {
     filter.type = { $regex: type.trim(), $options: 'i' };
   }
 
-  // Фильтр по типу объекта
   if (objectType && ['auto', 'realty', 'life'].includes(objectType)) {
     filter.objectType = objectType;
   }
 
-  // Фильтр по датам (период)
   applyDateFilter(filter, dateFrom, dateTo);
 
-  // Фильтр по статусу (виртуальное поле — фильтруем через даты)
   if (status) {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -84,14 +92,15 @@ const getContracts = async (userId, query = {}) => {
     } else if (status === 'active') {
       const in30 = new Date(now);
       in30.setDate(in30.getDate() + 30);
-      filter.$or = [
-        { endDate: null },
-        { endDate: { $gt: in30 } }
-      ];
+      if (!filter.$or) {
+        filter.$or = [
+          { endDate: null },
+          { endDate: { $gt: in30 } }
+        ];
+      }
     }
   }
 
-  // Поиск по номеру, СК, типу
   if (search && search.trim()) {
     const s = search.trim();
     const searchConditions = [
@@ -114,10 +123,9 @@ const getContracts = async (userId, query = {}) => {
     if (filter.$or) {
       const statusOr = filter.$or;
       delete filter.$or;
-      filter.$and = [
-        { $or: statusOr },
-        { $or: searchConditions }
-      ];
+      if (!filter.$and) filter.$and = [];
+      filter.$and.push({ $or: statusOr });
+      filter.$and.push({ $or: searchConditions });
     } else {
       filter.$or = searchConditions;
     }
@@ -154,34 +162,17 @@ const getContracts = async (userId, query = {}) => {
   };
 };
 
-/**
- * Получить договор по ID (только своего)
- */
 const getContractById = async (userId, contractId) => {
   const contract = await Contract.findOne({ _id: contractId, userId })
     .populate('clientId', 'name phone email status');
   return contract;
 };
 
-/**
- * Создать договор
- */
 const createContract = async (userId, data) => {
   const {
-    clientId,
-    company,
-    number,
-    type,
-    startDate,
-    endDate,
-    objectType,
-    objectData,
-    premium,
-    commissionType,
-    commissionValue,
-    installments,
-    note,
-    link
+    clientId, company, number, type, startDate, endDate,
+    objectType, objectData, premium, commissionType, commissionValue,
+    installments, note, link
   } = data;
 
   const client = await Client.findOne({ _id: clientId, userId });
@@ -192,11 +183,8 @@ const createContract = async (userId, data) => {
   }
 
   const contract = await Contract.create({
-    userId,
-    clientId,
-    company,
-    number: number || '',
-    type,
+    userId, clientId, company,
+    number: number || '', type,
     startDate: startDate || null,
     endDate: endDate || null,
     objectType: objectType || '',
@@ -210,13 +198,9 @@ const createContract = async (userId, data) => {
   });
 
   await contract.populate('clientId', 'name phone email');
-
   return contract;
 };
 
-/**
- * Обновить договор
- */
 const updateContract = async (userId, contractId, data) => {
   const allowed = [
     'clientId', 'company', 'number', 'type',
@@ -227,9 +211,7 @@ const updateContract = async (userId, contractId, data) => {
 
   const updates = {};
   for (const key of allowed) {
-    if (data[key] !== undefined) {
-      updates[key] = data[key];
-    }
+    if (data[key] !== undefined) updates[key] = data[key];
   }
 
   if (updates.clientId) {
@@ -250,33 +232,18 @@ const updateContract = async (userId, contractId, data) => {
   return contract;
 };
 
-/**
- * Удалить договор
- */
 const deleteContract = async (userId, contractId) => {
   const contract = await Contract.findOne({ _id: contractId, userId });
-
-  if (!contract) {
-    return null;
-  }
-
+  if (!contract) return null;
   await Contract.deleteOne({ _id: contractId, userId });
-
   return contract;
 };
 
-/**
- * Обновить статус взноса (paid: true/false)
- */
 const updateInstallment = async (userId, contractId, installmentIdx, data) => {
   const contract = await Contract.findOne({ _id: contractId, userId });
-
-  if (!contract) {
-    return null;
-  }
+  if (!contract) return null;
 
   const idx = parseInt(installmentIdx, 10);
-
   if (isNaN(idx) || idx < 0 || idx >= contract.installments.length) {
     const err = new Error('Взнос не найден');
     err.statusCode = 404;
@@ -289,42 +256,23 @@ const updateInstallment = async (userId, contractId, installmentIdx, data) => {
     installment.paid = data.paid;
     installment.paidDate = data.paid ? (data.paidDate || new Date()) : null;
   }
-
-  if (data.amount !== undefined) {
-    installment.amount = data.amount;
-  }
-
-  if (data.dueDate !== undefined) {
-    installment.dueDate = data.dueDate;
-  }
+  if (data.amount !== undefined) installment.amount = data.amount;
+  if (data.dueDate !== undefined) installment.dueDate = data.dueDate;
 
   await contract.save();
   await contract.populate('clientId', 'name phone email');
-
   return contract;
 };
 
-/**
- * Итого: суммы, средний чек, КВ
- */
 const getTotals = async (userId, query = {}) => {
   const { company, type, objectType, status, dateFrom, dateTo } = query;
 
   const filter = { userId };
 
-  if (company && company.trim()) {
-    filter.company = { $regex: company.trim(), $options: 'i' };
-  }
+  if (company && company.trim()) filter.company = { $regex: company.trim(), $options: 'i' };
+  if (type && type.trim()) filter.type = { $regex: type.trim(), $options: 'i' };
+  if (objectType && ['auto', 'realty', 'life'].includes(objectType)) filter.objectType = objectType;
 
-  if (type && type.trim()) {
-    filter.type = { $regex: type.trim(), $options: 'i' };
-  }
-
-  if (objectType && ['auto', 'realty', 'life'].includes(objectType)) {
-    filter.objectType = objectType;
-  }
-
-  // Фильтр по датам
   applyDateFilter(filter, dateFrom, dateTo);
 
   if (status) {
@@ -357,29 +305,24 @@ const getTotals = async (userId, query = {}) => {
 
   for (const c of contracts) {
     totalPremium += c.premium || 0;
-
     if (c.commissionType === '%') {
       totalCommission += Math.round((c.premium || 0) * (c.commissionValue || 0) / 100);
     } else {
       totalCommission += c.commissionValue || 0;
     }
-
     totalAccrualCommission += c.accrualCommission || 0;
-
     if (c.installments && c.installments.length > 0) {
       totalInstallments += c.installments.length;
       totalPaidInstallments += c.installments.filter(i => i.paid).length;
     }
   }
 
-  const count = contracts.length;
-
   return {
-    count,
+    count: contracts.length,
     totalPremium,
     totalCommission,
     totalAccrualCommission,
-    averagePremium: count > 0 ? Math.round(totalPremium / count) : 0,
+    averagePremium: contracts.length > 0 ? Math.round(totalPremium / contracts.length) : 0,
     totalInstallments,
     totalPaidInstallments
   };
