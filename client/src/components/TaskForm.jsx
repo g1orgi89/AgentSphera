@@ -80,7 +80,7 @@ function TaskForm({ task, fixedClient, onSubmit, onClose }) {
   };
 
   return (
-    <div className="task-form-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="task-form-overlay">
       <div className="task-form-modal">
         <div className="task-form-header">
           <h2>{task ? 'Редактировать задачу' : 'Новая задача'}</h2>

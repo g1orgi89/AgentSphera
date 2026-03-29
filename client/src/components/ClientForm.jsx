@@ -41,7 +41,6 @@ function ClientForm({ client, onSubmit, onClose }) {
     e.preventDefault();
     setError('');
 
-    // Валидация
     if (!formData.name.trim()) {
       setError('Укажите имя клиента');
       return;
@@ -67,8 +66,8 @@ function ClientForm({ client, onSubmit, onClose }) {
   };
 
   return (
-    <div className="client-form-overlay" onClick={onClose}>
-      <div className="client-form-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="client-form-overlay">
+      <div className="client-form-modal">
         <div className="client-form-header">
           <h2>{isEditing ? 'Редактировать клиента' : 'Новый клиент'}</h2>
           <button className="client-form-close" onClick={onClose}>
