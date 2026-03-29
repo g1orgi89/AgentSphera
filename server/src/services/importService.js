@@ -139,7 +139,6 @@ async function saveImport(rows, userId) {
   const results = { created: 0, skipped: 0, errors: [], clientsCreated: 0, clientsFound: 0 };
 
   const allClients = await Client.find({ userId });
-  // Кэш: normalizedName → [client, client, ...] (может быть несколько тёзок)
   const clientMap = new Map();
   for (const c of allClients) {
     const key = normalizeNameForCompare(c.name);
@@ -156,22 +155,16 @@ async function saveImport(rows, userId) {
       if (row.clientName) {
         const normalizedSearch = normalizeNameForCompare(row.clientName);
         const candidates = clientMap.get(normalizedSearch) || [];
-
         let client = null;
 
         if (candidates.length > 0) {
-          // Защита от тёзок: если у строки есть ДР — ищем клиента с таким же ДР
           const rowBD = formatBD(row.clientBirthday);
-
           if (rowBD) {
-            // Есть ДР в импорте — ищем точное совпадение по ДР
             client = candidates.find(c => {
               const cbd = formatBD(c.birthday);
-              return !cbd || cbd === rowBD; // совпадает или у клиента нет ДР
+              return !cbd || cbd === rowBD;
             });
-            // Если не нашли — все кандидаты имеют ДРУГОЙ ДР, это тёзка → создать нового
           } else {
-            // Нет ДР в импорте — берём первого кандидата
             client = candidates[0];
           }
         }
@@ -197,10 +190,14 @@ async function saveImport(rows, userId) {
 
       if (!clientId) { results.skipped++; results.errors.push({ row: i + 1, error: 'Нет имени клиента' }); continue; }
 
+      // Проверка дубликата: номер + СК + премия + даты + тип
       if (row.number) {
         const dupeFilter = { userId, number: { $regex: new RegExp('^' + escapeRegex(row.number) + '$', 'i') } };
         if (row.company) dupeFilter.company = { $regex: new RegExp('^' + escapeRegex(row.company) + '$', 'i') };
         if (row.premium !== null && row.premium !== undefined) dupeFilter.premium = row.premium;
+        if (row.startDate) dupeFilter.startDate = row.startDate;
+        if (row.endDate) dupeFilter.endDate = row.endDate;
+        if (row.type) dupeFilter.type = { $regex: new RegExp('^' + escapeRegex(row.type) + '$', 'i') };
         const existing = await Contract.findOne(dupeFilter);
         if (existing) { results.skipped++; continue; }
       }
