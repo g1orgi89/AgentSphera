@@ -1,0 +1,78 @@
+/* === Фильтр по датам (Contracts) === */
+
+.contracts-date-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.contracts-date-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-light);
+  white-space: nowrap;
+}
+
+.contracts-date-input {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  background: var(--card);
+  color: var(--text);
+  min-width: 130px;
+}
+
+.contracts-date-input:focus {
+  outline: none;
+  border-color: var(--sec);
+  box-shadow: 0 0 0 3px rgba(60, 168, 168, 0.15);
+}
+
+.contracts-date-sep {
+  color: var(--text-light);
+  font-size: 0.875rem;
+}
+
+.contracts-clear-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--danger);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.contracts-clear-filters:hover {
+  background: #fef2f2;
+}
+
+@media (max-width: 768px) {
+  .contracts-date-filter {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .contracts-date-input {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 8px;
+    border-width: 2px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+  }
+
+  .contracts-clear-filters {
+    width: 100%;
+    justify-content: center;
+    padding: 8px;
+  }
+}
