@@ -26,7 +26,7 @@ function Acts() {
   const [saving, setSaving] = useState(false);
   const [manualItems, setManualItems] = useState([{ contractNumber: '', clientName: '', actualAmount: '' }]);
   const [expandedAct, setExpandedAct] = useState(null);
-  const [addingContract, setAddingContract] = useState(null); // actId:itemIndex
+  const [addingContract, setAddingContract] = useState(null);
 
   const fetchActs = useCallback(async () => {
     setLoadingActs(true);
@@ -88,20 +88,21 @@ function Acts() {
     try { await api.delete(`/acts/${actId}`); fetchActs(); } catch { setError('Ошибка удаления'); }
   };
 
-  // --- Добавить договор из акта (для "не найденных") ---
   const handleAddContractFromAct = async (actId, itemIndex) => {
     const key = `${actId}:${itemIndex}`;
     setAddingContract(key);
     try {
       const res = await api.post(`/acts/${actId}/add-contract`, { itemIndex });
-      // Обновляем акт в списке
       setActs(prev => prev.map(a => a._id === actId ? res.data.data : a));
-      toast.success('Договор добавлен');
+      const meta = res.data.meta;
+      if (meta?.newClient) {
+        toast.success(`Создан клиент "${meta.clientName}" + договор`);
+      } else {
+        toast.success(`Договор добавлен к клиенту "${meta.clientName}"`);
+      }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Ошибка добавления договора');
-    } finally {
-      setAddingContract(null);
-    }
+    } finally { setAddingContract(null); }
   };
 
   const formatDate = (date) => { if (!date) return ''; return new Date(date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' }); };
@@ -129,35 +130,20 @@ function Acts() {
       <div className="acts-mode-toggle">
         <button className={`acts-mode-btn ${mode === 'upload' ? 'active' : ''}`} onClick={() => { setMode('upload'); setPreviewItems(null); setError(''); }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 2v8M4 6l4-4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M2 12h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-          Загрузить файл
-        </button>
+          Загрузить файл</button>
         <button className={`acts-mode-btn ${mode === 'manual' ? 'active' : ''}`} onClick={() => { setMode('manual'); setPreviewItems(null); setError(''); }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 13h10M3 9l7-7 2 2-7 7H3V9z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          Ручной ввод
-        </button>
+          Ручной ввод</button>
       </div>
 
       {mode === 'upload' && !previewItems && (
         <>
           <div className={`acts-dropzone ${dragOver ? 'drag-over' : ''} ${file ? 'has-file' : ''}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onClick={() => !file && fileInputRef.current?.click()}>
-            {file ? (
-              <div className="acts-dropzone-file">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="var(--sec)" strokeWidth="1.5" /><path d="M14 2v6h6" stroke="var(--sec)" strokeWidth="1.5" /></svg>
-                <span className="acts-dropzone-filename">{file.name}</span>
-                <button className="acts-dropzone-clear" onClick={(e) => { e.stopPropagation(); clearFile(); }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></button>
-              </div>
-            ) : (
-              <div className="acts-dropzone-placeholder">
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 8v16M12 16l8-8 8 8" stroke="var(--sec)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" /><path d="M6 28h28" stroke="var(--sec)" strokeWidth="2" strokeLinecap="round" opacity="0.3" /></svg>
-                <p>Перетащите файл сюда или нажмите для выбора</p>
-                <span className="acts-dropzone-hint">Excel (.xlsx, .xls), PDF, CSV • макс. 5MB</span>
-              </div>
-            )}
+            {file ? (<div className="acts-dropzone-file"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="var(--sec)" strokeWidth="1.5" /><path d="M14 2v6h6" stroke="var(--sec)" strokeWidth="1.5" /></svg><span className="acts-dropzone-filename">{file.name}</span><button className="acts-dropzone-clear" onClick={(e) => { e.stopPropagation(); clearFile(); }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></button></div>
+            ) : (<div className="acts-dropzone-placeholder"><svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M20 8v16M12 16l8-8 8 8" stroke="var(--sec)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" /><path d="M6 28h28" stroke="var(--sec)" strokeWidth="2" strokeLinecap="round" opacity="0.3" /></svg><p>Перетащите файл сюда</p><span className="acts-dropzone-hint">Excel, PDF, CSV • макс. 5MB</span></div>)}
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.pdf,.csv" onChange={handleFileSelect} style={{ display: 'none' }} />
           </div>
-          <button className="acts-upload-btn" onClick={handleUpload} disabled={processing || !file || !company.trim()}>
-            {processing ? (<><span className="acts-spinner"></span>AI распознаёт документ...</>) : 'Распознать и сверить'}
-          </button>
+          <button className="acts-upload-btn" onClick={handleUpload} disabled={processing || !file || !company.trim()}>{processing ? (<><span className="acts-spinner"></span>AI распознаёт...</>) : 'Распознать и сверить'}</button>
         </>
       )}
 
@@ -165,47 +151,16 @@ function Acts() {
         <div className="acts-preview">
           <div className="acts-preview-header"><h2>Распознанные данные</h2><span className="acts-preview-count">{previewItems.length} строк</span></div>
           {(() => { const s = getSummary(previewItems); return s ? (<div className="acts-preview-summary"><span className="act-status-ok">{s.found} найдено</span><span className="act-status-unknown">{s.unknown} не найд.</span></div>) : null; })()}
-          <div className="acts-preview-table-wrap">
-            <table className="acts-preview-table">
-              <thead><tr><th>№ договора</th><th>Клиент</th><th>КВ ожид.</th><th>КВ факт.</th><th>Статус</th><th></th></tr></thead>
-              <tbody>
-                {previewItems.map((item, idx) => (
-                  <tr key={idx}>
-                    <td><input type="text" value={item.contractNumber} onChange={(e) => updatePreviewItem(idx, 'contractNumber', e.target.value)} className="acts-cell-input" /></td>
-                    <td><input type="text" value={item.clientName} onChange={(e) => updatePreviewItem(idx, 'clientName', e.target.value)} className="acts-cell-input" /></td>
-                    <td className="acts-cell-num">{formatCurrency(item.expectedAmount)}</td>
-                    <td><input type="number" value={item.actualAmount} onChange={(e) => updatePreviewItem(idx, 'actualAmount', e.target.value)} className="acts-cell-input acts-cell-input-num" /></td>
-                    <td><span className={`acts-status-badge ${STATUS_CLASS[item.status] || ''}`}>{STATUS_LABELS[item.status] || item.status}</span>{item.confidence && item.confidence !== 'exact' && item.confidence !== 'none' && <span className="acts-confidence-hint" title={`Уверенность: ${item.confidence}`}> ~</span>}</td>
-                    <td><button className="acts-row-delete" onClick={() => removePreviewItem(idx)}><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg></button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="acts-preview-actions">
-            <button className="acts-cancel-btn" onClick={() => { setPreviewItems(null); clearFile(); }}>Отмена</button>
-            <button className="acts-save-btn" onClick={handleSave} disabled={saving || previewItems.length === 0}>{saving ? 'Сохранение...' : 'Сохранить акт'}</button>
-          </div>
+          <div className="acts-preview-table-wrap"><table className="acts-preview-table"><thead><tr><th>№ договора</th><th>Клиент</th><th>КВ ожид.</th><th>КВ факт.</th><th>Статус</th><th></th></tr></thead>
+            <tbody>{previewItems.map((item, idx) => (<tr key={idx}><td><input type="text" value={item.contractNumber} onChange={(e) => updatePreviewItem(idx, 'contractNumber', e.target.value)} className="acts-cell-input" /></td><td><input type="text" value={item.clientName} onChange={(e) => updatePreviewItem(idx, 'clientName', e.target.value)} className="acts-cell-input" /></td><td className="acts-cell-num">{formatCurrency(item.expectedAmount)}</td><td><input type="number" value={item.actualAmount} onChange={(e) => updatePreviewItem(idx, 'actualAmount', e.target.value)} className="acts-cell-input acts-cell-input-num" /></td><td><span className={`acts-status-badge ${STATUS_CLASS[item.status] || ''}`}>{STATUS_LABELS[item.status] || item.status}</span>{item.confidence && item.confidence !== 'exact' && item.confidence !== 'none' && <span className="acts-confidence-hint" title={`Уверенность: ${item.confidence}`}> ~</span>}</td><td><button className="acts-row-delete" onClick={() => removePreviewItem(idx)}><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg></button></td></tr>))}</tbody></table></div>
+          <div className="acts-preview-actions"><button className="acts-cancel-btn" onClick={() => { setPreviewItems(null); clearFile(); }}>Отмена</button><button className="acts-save-btn" onClick={handleSave} disabled={saving || previewItems.length === 0}>{saving ? 'Сохранение...' : 'Сохранить акт'}</button></div>
         </div>
       )}
 
       {mode === 'manual' && !previewItems && (
         <div className="acts-manual">
-          <div className="acts-manual-table-wrap">
-            <table className="acts-manual-table">
-              <thead><tr><th>№ договора</th><th>Клиент</th><th>Сумма КВ</th><th></th></tr></thead>
-              <tbody>
-                {manualItems.map((item, idx) => (
-                  <tr key={idx}>
-                    <td><input type="text" placeholder="№ договора" value={item.contractNumber} onChange={(e) => updateManualItem(idx, 'contractNumber', e.target.value)} className="acts-cell-input" /></td>
-                    <td><input type="text" placeholder="Имя клиента" value={item.clientName} onChange={(e) => updateManualItem(idx, 'clientName', e.target.value)} className="acts-cell-input" /></td>
-                    <td><input type="number" placeholder="0" value={item.actualAmount} onChange={(e) => updateManualItem(idx, 'actualAmount', e.target.value)} className="acts-cell-input acts-cell-input-num" /></td>
-                    <td>{manualItems.length > 1 && (<button className="acts-row-delete" onClick={() => removeManualRow(idx)}><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg></button>)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <div className="acts-manual-table-wrap"><table className="acts-manual-table"><thead><tr><th>№ договора</th><th>Клиент</th><th>Сумма КВ</th><th></th></tr></thead>
+            <tbody>{manualItems.map((item, idx) => (<tr key={idx}><td><input type="text" placeholder="№ договора" value={item.contractNumber} onChange={(e) => updateManualItem(idx, 'contractNumber', e.target.value)} className="acts-cell-input" /></td><td><input type="text" placeholder="Имя клиента" value={item.clientName} onChange={(e) => updateManualItem(idx, 'clientName', e.target.value)} className="acts-cell-input" /></td><td><input type="number" placeholder="0" value={item.actualAmount} onChange={(e) => updateManualItem(idx, 'actualAmount', e.target.value)} className="acts-cell-input acts-cell-input-num" /></td><td>{manualItems.length > 1 && (<button className="acts-row-delete" onClick={() => removeManualRow(idx)}><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg></button>)}</td></tr>))}</tbody></table></div>
           <button className="acts-add-row-btn" onClick={addManualRow}><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>Добавить строку</button>
           <button className="acts-save-btn" onClick={handleManualSave} disabled={saving}>{saving ? 'Сохранение...' : 'Сверить и сохранить'}</button>
         </div>
@@ -214,72 +169,20 @@ function Acts() {
       <div className="acts-saved">
         <div className="acts-saved-header"><h2>Сохранённые акты</h2></div>
         {loadingActs ? (<div className="acts-loading">Загрузка...</div>) : acts.length === 0 ? (
-          <div className="acts-empty">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="10" y="7" width="28" height="34" rx="3" stroke="var(--sec)" strokeWidth="1.5" fill="none" opacity="0.4" /><path d="M17 17h14M17 23h14M17 29h10" stroke="var(--sec)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" /></svg>
-            <p>Пока нет сохранённых актов</p>
-          </div>
+          <div className="acts-empty"><svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="10" y="7" width="28" height="34" rx="3" stroke="var(--sec)" strokeWidth="1.5" fill="none" opacity="0.4" /><path d="M17 17h14M17 23h14M17 29h10" stroke="var(--sec)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" /></svg><p>Пока нет сохранённых актов</p></div>
         ) : (
-          <div className="acts-list">
-            {acts.map(act => {
-              const summary = getSummary(act.items);
-              const isExpanded = expandedAct === act._id;
-              return (
-                <div key={act._id} className="act-card">
-                  <div className="act-card-header" onClick={() => setExpandedAct(isExpanded ? null : act._id)}>
-                    <div className="act-card-info">
-                      <span className="act-card-company">{act.company}</span>
-                      {act.period && <span className="act-card-period">{act.period}</span>}
-                      <span className="act-card-date">{formatDate(act.date)}</span>
-                      <span className="act-card-source">{getSourceLabel(act.source)}</span>
-                    </div>
-                    <div className="act-card-stats">
-                      {summary && (<><span className="act-stat-ok">{summary.found}</span><span className="act-stat-unknown">{summary.unknown}</span></>)}
-                      <span className="act-card-total">{act.items.length} стр.</span>
-                      <button className="act-card-delete" onClick={(e) => { e.stopPropagation(); handleDeleteAct(act._id); }}><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg></button>
-                      <svg className={`act-card-chevron ${isExpanded ? 'expanded' : ''}`} width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    </div>
-                  </div>
-
-                  {isExpanded && (
-                    <div className="act-card-body">
-                      <table className="act-detail-table">
-                        <thead><tr><th>№ договора</th><th>Клиент</th><th>КВ факт.</th><th>Статус</th><th></th></tr></thead>
-                        <tbody>
-                          {act.items.map((item, idx) => {
-                            const isAdding = addingContract === `${act._id}:${idx}`;
-                            return (
-                              <tr key={idx}>
-                                <td>{item.contractNumber || '—'}</td>
-                                <td>{item.clientName || '—'}</td>
-                                <td className="acts-cell-num">{formatCurrency(item.actualAmount)}</td>
-                                <td>
-                                  <span className={`acts-status-badge ${STATUS_CLASS[item.status] || ''}`}>
-                                    {STATUS_LABELS[item.status] || item.status}
-                                  </span>
-                                </td>
-                                <td>
-                                  {item.status === 'unknown' && (
-                                    <button
-                                      className="acts-add-contract-btn"
-                                      onClick={() => handleAddContractFromAct(act._id, idx)}
-                                      disabled={isAdding}
-                                      title="Создать договор и клиента из данных акта"
-                                    >
-                                      {isAdding ? '...' : '+ Добавить'}
-                                    </button>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <div className="acts-list">{acts.map(act => {
+            const summary = getSummary(act.items);
+            const isExpanded = expandedAct === act._id;
+            return (<div key={act._id} className="act-card">
+              <div className="act-card-header" onClick={() => setExpandedAct(isExpanded ? null : act._id)}>
+                <div className="act-card-info"><span className="act-card-company">{act.company}</span>{act.period && <span className="act-card-period">{act.period}</span>}<span className="act-card-date">{formatDate(act.date)}</span><span className="act-card-source">{getSourceLabel(act.source)}</span></div>
+                <div className="act-card-stats">{summary && (<><span className="act-stat-ok">{summary.found}</span><span className="act-stat-unknown">{summary.unknown}</span></>)}<span className="act-card-total">{act.items.length} стр.</span><button className="act-card-delete" onClick={(e) => { e.stopPropagation(); handleDeleteAct(act._id); }}><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg></button><svg className={`act-card-chevron ${isExpanded ? 'expanded' : ''}`} width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
+              </div>
+              {isExpanded && (<div className="act-card-body"><table className="act-detail-table"><thead><tr><th>№ договора</th><th>Клиент</th><th>КВ факт.</th><th>Статус</th><th></th></tr></thead>
+                <tbody>{act.items.map((item, idx) => { const isAdding = addingContract === `${act._id}:${idx}`; return (<tr key={idx}><td>{item.contractNumber || '—'}</td><td>{item.clientName || '—'}</td><td className="acts-cell-num">{formatCurrency(item.actualAmount)}</td><td><span className={`acts-status-badge ${STATUS_CLASS[item.status] || ''}`}>{STATUS_LABELS[item.status] || item.status}</span></td><td>{item.status === 'unknown' && (<button className="acts-add-contract-btn" onClick={() => handleAddContractFromAct(act._id, idx)} disabled={isAdding} title="Создать договор из данных акта">{isAdding ? '...' : '+ Добавить'}</button>)}</td></tr>); })}</tbody></table></div>)}
+            </div>);
+          })}</div>
         )}
       </div>
     </div>
