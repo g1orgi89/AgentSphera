@@ -33,6 +33,7 @@ const COLUMNS = [
   { key: 'status', label: 'Статус', sortable: false },
   { key: 'premium', label: 'Премия', sortable: true },
   { key: 'commissionAmount', label: 'КВ ожид.', sortable: false },
+  { key: 'accrualCommission', label: 'КВ начисл.', sortable: false },
   { key: 'installments', label: 'Взносы', sortable: false },
 ];
 
@@ -57,6 +58,8 @@ function Contracts() {
   const [filterType, setFilterType] = useState('');
   const [filterObjectType, setFilterObjectType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [sort, setSort] = useState('-createdAt');
   const [page, setPage] = useState(1);
 
@@ -78,15 +81,21 @@ function Contracts() {
       if (filterType) params.type = filterType;
       if (filterObjectType) params.objectType = filterObjectType;
       if (filterStatus) params.status = filterStatus;
+      if (dateFrom) params.dateFrom = dateFrom;
+      if (dateTo) params.dateTo = dateTo;
+
+      const totalsParams = {
+        company: filterCompany || undefined,
+        type: filterType || undefined,
+        objectType: filterObjectType || undefined,
+        status: filterStatus || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined
+      };
 
       const [listRes, totalsRes] = await Promise.all([
         api.get('/contracts', { params }),
-        api.get('/contracts/totals', { params: {
-          company: filterCompany || undefined,
-          type: filterType || undefined,
-          objectType: filterObjectType || undefined,
-          status: filterStatus || undefined
-        }})
+        api.get('/contracts/totals', { params: totalsParams })
       ]);
 
       setContracts(listRes.data.data);
@@ -97,7 +106,7 @@ function Contracts() {
     } finally {
       setLoading(false);
     }
-  }, [search, filterCompany, filterType, filterObjectType, filterStatus, sort, page]);
+  }, [search, filterCompany, filterType, filterObjectType, filterStatus, dateFrom, dateTo, sort, page]);
 
   useEffect(() => {
     const loadFilterOptions = async () => {
@@ -175,6 +184,19 @@ function Contracts() {
     fetchContracts();
   };
 
+  const handleClearFilters = () => {
+    setFilterCompany('');
+    setFilterType('');
+    setFilterObjectType('');
+    setFilterStatus('');
+    setDateFrom('');
+    setDateTo('');
+    setSearchInput('');
+    setPage(1);
+  };
+
+  const hasActiveFilters = filterCompany || filterType || filterObjectType || filterStatus || dateFrom || dateTo;
+
   const formatDate = (date) => {
     if (!date) return '—';
     return new Date(date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
@@ -209,7 +231,6 @@ function Contracts() {
         <BurgerButton />
         <h1>Договоры</h1>
         <div className="contracts-header-actions">
-          {/* Excel dropdown */}
           <div className="contracts-excel-wrap">
             <button
               className="contracts-export-btn"
@@ -289,6 +310,20 @@ function Contracts() {
             <option value="expired">Истёкшие</option>
           </select>
         </div>
+        <div className="contracts-date-filter">
+          <label className="contracts-date-label">Период:</label>
+          <input type="date" className="contracts-date-input" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} />
+          <span className="contracts-date-sep">—</span>
+          <input type="date" className="contracts-date-input" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} />
+        </div>
+        {hasActiveFilters && (
+          <button className="contracts-clear-filters" onClick={handleClearFilters}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            Сбросить фильтры
+          </button>
+        )}
       </div>
 
       {error && <div className="contracts-error">{error}</div>}
@@ -339,6 +374,7 @@ function Contracts() {
                     <td><span className={`ct-status ${STATUS_CLASS[contract.status] || ''}`}>{getStatusLabel(contract)}</span></td>
                     <td className="ct-premium">{formatCurrency(contract.premium)} ₽</td>
                     <td className="ct-commission">{formatCurrency(contract.commissionAmount)} ₽</td>
+                    <td className="ct-commission">{contract.accrualCommission ? formatCurrency(contract.accrualCommission) + ' ₽' : '—'}</td>
                     <td className="ct-installments">{getInstallmentsSummary(contract.installments)}</td>
                   </tr>
                 ))}
@@ -350,6 +386,7 @@ function Contracts() {
                     <td></td><td></td><td></td><td></td><td></td><td></td>
                     <td className="ct-premium">{formatCurrency(totals.totalPremium)} ₽</td>
                     <td className="ct-commission">{formatCurrency(totals.totalCommission)} ₽</td>
+                    <td className="ct-commission">{totals.totalAccrualCommission ? formatCurrency(totals.totalAccrualCommission) + ' ₽' : '—'}</td>
                     <td className="ct-installments">{totals.totalPaidInstallments}/{totals.totalInstallments}</td>
                   </tr>
                 </tfoot>
@@ -359,7 +396,6 @@ function Contracts() {
 
           {/* === Мобильные карточки === */}
           <div className="contracts-cards">
-            {/* Итого-строка */}
             {totals && (
               <div className="contracts-mobile-totals">
                 <div className="contracts-mobile-totals-item">
@@ -367,8 +403,12 @@ function Contracts() {
                   <span className="contracts-mobile-totals-value">{formatCurrency(totals.totalPremium)} ₽</span>
                 </div>
                 <div className="contracts-mobile-totals-item contracts-mobile-totals-kv">
-                  <span className="contracts-mobile-totals-label">КВ</span>
+                  <span className="contracts-mobile-totals-label">КВ ожид.</span>
                   <span className="contracts-mobile-totals-value">{formatCurrency(totals.totalCommission)} ₽</span>
+                </div>
+                <div className="contracts-mobile-totals-item">
+                  <span className="contracts-mobile-totals-label">КВ начисл.</span>
+                  <span className="contracts-mobile-totals-value">{totals.totalAccrualCommission ? formatCurrency(totals.totalAccrualCommission) + ' ₽' : '—'}</span>
                 </div>
                 <div className="contracts-mobile-totals-item">
                   <span className="contracts-mobile-totals-label">Кол-во</span>
@@ -406,6 +446,9 @@ function Contracts() {
                   <div className="contracts-card-money">
                     <span className="contracts-card-premium">Премия: {formatCurrency(contract.premium)} ₽</span>
                     <span className="contracts-card-kv">КВ: {formatCurrency(contract.commissionAmount)} ₽</span>
+                    {contract.accrualCommission ? (
+                      <span className="contracts-card-kv">Начисл.: {formatCurrency(contract.accrualCommission)} ₽</span>
+                    ) : null}
                   </div>
                   {contract.installments && contract.installments.length > 0 && (
                     <span className="contracts-card-inst">
@@ -441,7 +484,6 @@ function Contracts() {
         />
       )}
 
-      {/* Закрыть Excel меню при клике вне */}
       {showExcelMenu && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 50 }}
