@@ -14,6 +14,18 @@ function normalizeForCompare(name) {
 }
 
 /**
+ * Объединить два строковых поля через запятую (без дубликатов)
+ */
+function mergeField(a, b) {
+  a = (a || '').trim();
+  b = (b || '').trim();
+  if (!a) return b;
+  if (!b) return a;
+  if (a.toLowerCase() === b.toLowerCase()) return a;
+  return `${a}, ${b}`;
+}
+
+/**
  * Получить список клиентов с поиском, фильтрацией, сортировкой и пагинацией
  */
 const getClients = async (userId, query = {}) => {
@@ -61,17 +73,11 @@ const getClients = async (userId, query = {}) => {
   };
 };
 
-/**
- * Получить клиента по ID (только своего)
- */
 const getClientById = async (userId, clientId) => {
   const client = await Client.findOne({ _id: clientId, userId });
   return client;
 };
 
-/**
- * Создать клиента с проверкой дубликатов (предупреждение, не блокировка)
- */
 const createClient = async (userId, data) => {
   const { name, phone, email, birthday, preferredContact, status, note, link } = data;
 
@@ -103,9 +109,6 @@ const createClient = async (userId, data) => {
   };
 };
 
-/**
- * Обновить клиента
- */
 const updateClient = async (userId, clientId, data) => {
   const allowed = ['name', 'phone', 'email', 'birthday', 'preferredContact', 'status', 'note', 'link'];
   const updates = {};
@@ -125,9 +128,6 @@ const updateClient = async (userId, clientId, data) => {
   return client;
 };
 
-/**
- * Удалить клиента + каскадное удаление договоров, задач, заметок
- */
 const deleteClient = async (userId, clientId) => {
   const client = await Client.findOne({ _id: clientId, userId });
 
@@ -155,9 +155,6 @@ const deleteClient = async (userId, clientId) => {
   return client;
 };
 
-/**
- * Сводка клиента: общая премия, КВ, кол-во договоров
- */
 const getClientSummary = async (userId, clientId) => {
   const summary = {
     totalPremium: 0,
@@ -199,13 +196,9 @@ const getClientSummary = async (userId, clientId) => {
   return summary;
 };
 
-/**
- * Найти дубликаты клиентов (похожие имена)
- */
 const findDuplicates = async (userId) => {
   const allClients = await Client.find({ userId }).lean();
 
-  // Группируем по нормализованному имени
   const groups = {};
   for (const client of allClients) {
     const key = normalizeForCompare(client.name);
@@ -214,11 +207,9 @@ const findDuplicates = async (userId) => {
     groups[key].push(client);
   }
 
-  // Оставляем только группы с 2+ клиентами
   const duplicates = [];
   for (const [normalizedName, clients] of Object.entries(groups)) {
     if (clients.length < 2) continue;
-    // Проверяем что имена действительно разные (не полные дубликаты)
     duplicates.push({
       normalizedName,
       clients: clients.map(c => ({
@@ -232,7 +223,6 @@ const findDuplicates = async (userId) => {
     });
   }
 
-  // Подгружаем кол-во договоров для каждого клиента
   const Contract = mongoose.model('Contract');
   for (const group of duplicates) {
     for (const client of group.clients) {
@@ -240,17 +230,15 @@ const findDuplicates = async (userId) => {
     }
   }
 
-  // Сортируем: группы с большим кол-вом клиентов сначала
   duplicates.sort((a, b) => b.clients.length - a.clients.length);
 
   return duplicates;
 };
 
 /**
- * Объединить двух клиентов: все связанные данные переносятся на keepId, removeId удаляется
+ * Объединить двух клиентов: данные дополняются через запятую, всё связанное переносится
  */
 const mergeClients = async (userId, keepId, removeId) => {
-  // Проверяем что оба клиента существуют и принадлежат пользователю
   const keepClient = await Client.findOne({ _id: keepId, userId });
   const removeClient = await Client.findOne({ _id: removeId, userId });
 
@@ -266,13 +254,21 @@ const mergeClients = async (userId, keepId, removeId) => {
     throw err;
   }
 
-  // Перенести пустые поля с удаляемого клиента
+  // Объединяем контактные данные через запятую (не теряем ни один номер/email)
   let updated = false;
-  if (!keepClient.phone && removeClient.phone) { keepClient.phone = removeClient.phone; updated = true; }
-  if (!keepClient.email && removeClient.email) { keepClient.email = removeClient.email; updated = true; }
+  const newPhone = mergeField(keepClient.phone, removeClient.phone);
+  if (newPhone !== keepClient.phone) { keepClient.phone = newPhone; updated = true; }
+
+  const newEmail = mergeField(keepClient.email, removeClient.email);
+  if (newEmail !== keepClient.email) { keepClient.email = newEmail; updated = true; }
+
   if (!keepClient.birthday && removeClient.birthday) { keepClient.birthday = removeClient.birthday; updated = true; }
-  if (!keepClient.note && removeClient.note) { keepClient.note = removeClient.note; updated = true; }
+
+  const newNote = mergeField(keepClient.note, removeClient.note);
+  if (newNote !== keepClient.note) { keepClient.note = newNote; updated = true; }
+
   if (!keepClient.link && removeClient.link) { keepClient.link = removeClient.link; updated = true; }
+
   if (updated) await keepClient.save();
 
   // Перенести все договоры
@@ -308,9 +304,6 @@ const mergeClients = async (userId, keepId, removeId) => {
   return keepClient;
 };
 
-/**
- * Экранирование спецсимволов для RegExp
- */
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
