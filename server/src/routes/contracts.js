@@ -9,12 +9,14 @@ router.use(protect);
 // GET /api/v1/contracts/totals — итого (до /:id чтобы не конфликтовать)
 router.get('/totals', async (req, res) => {
   try {
-    const { company, type, objectType, status } = req.query;
+    const { company, type, objectType, status, dateFrom, dateTo } = req.query;
     const totals = await contractService.getTotals(req.user._id, {
       company,
       type,
       objectType,
-      status
+      status,
+      dateFrom,
+      dateTo
     });
 
     res.json({
@@ -32,7 +34,7 @@ router.get('/totals', async (req, res) => {
 // GET /api/v1/contracts — список с поиском, фильтрами, сортировкой, пагинацией
 router.get('/', async (req, res) => {
   try {
-    const { search, clientId, company, type, objectType, status, sort, page, limit } = req.query;
+    const { search, clientId, company, type, objectType, status, dateFrom, dateTo, sort, page, limit } = req.query;
     const result = await contractService.getContracts(req.user._id, {
       search,
       clientId,
@@ -40,6 +42,8 @@ router.get('/', async (req, res) => {
       type,
       objectType,
       status,
+      dateFrom,
+      dateTo,
       sort,
       page,
       limit
