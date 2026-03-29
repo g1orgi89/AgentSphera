@@ -111,7 +111,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
     })) || []
   });
 
-  // Загружаем подсказки для Combo
   useEffect(() => {
     const loadSuggestions = async () => {
       try {
@@ -121,9 +120,7 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
         const types = [...new Set(contracts.map(c => c.type).filter(Boolean))];
         setCompanySuggestions(companies.sort());
         setTypeSuggestions(types.sort());
-      } catch {
-        // Не критично
-      }
+      } catch {}
     };
     loadSuggestions();
   }, []);
@@ -138,8 +135,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
       objectData: { ...prev.objectData, [field]: e.target.value }
     }));
   };
-
-  // --- Взносы ---
 
   const addInstallment = () => {
     if (formData.installments.length >= 4) return;
@@ -164,8 +159,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
     });
   };
 
-  // --- Клиент ---
-
   const handleClientSelect = (client) => {
     if (client) {
       setFormData(prev => ({ ...prev, clientId: client._id, clientName: client.name }));
@@ -180,8 +173,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
     setFormData(prev => ({ ...prev, clientId: newClient._id, clientName: newClient.name }));
     setShowNewClient(false);
   };
-
-  // --- Валидация ---
 
   const validateStep1 = () => {
     if (!formData.clientId) return 'Выберите клиента';
@@ -204,8 +195,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
     return null;
   };
 
-  // --- Навигация ---
-
   const goNext = () => {
     setError('');
     if (step === 1) {
@@ -219,8 +208,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
     setError('');
     setStep(prev => Math.max(prev - 1, 1));
   };
-
-  // --- Отправка ---
 
   const handleSubmit = async () => {
     setError('');
@@ -248,7 +235,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
         link: formData.link.trim()
       };
 
-      // Объект — только нужные поля
       if (formData.objectType === 'auto') {
         payload.objectData = {
           car: formData.objectData.car.trim(),
@@ -277,8 +263,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
     }
   };
 
-  // --- Расчёт комиссии ---
-
   const calcCommission = () => {
     const premium = Number(formData.premium) || 0;
     const value = Number(formData.commissionValue) || 0;
@@ -288,11 +272,8 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
     return value;
   };
 
-  // --- Рендер шагов ---
-
   const renderStep1 = () => (
     <div className="contract-form">
-      {/* Клиент */}
       {showClientPicker && (
         <div className="contract-client-section">
           <div className="contract-form-field">
@@ -312,7 +293,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
         </div>
       )}
 
-      {/* СК */}
       <div className="contract-form-field">
         <label>Страховая компания *</label>
         <Combo
@@ -323,7 +303,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
         />
       </div>
 
-      {/* Номер + Тип */}
       <div className="contract-form-row">
         <div className="contract-form-field">
           <label>Номер договора</label>
@@ -345,7 +324,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
         </div>
       </div>
 
-      {/* Даты */}
       <div className="contract-form-row">
         <div className="contract-form-field">
           <label>Дата начала</label>
@@ -365,7 +343,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
         </div>
       </div>
 
-      {/* Премия + Комиссия */}
       <div className="contract-form-row">
         <div className="contract-form-field">
           <label>Премия *</label>
@@ -400,7 +377,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
         </div>
       </div>
 
-      {/* Взносы */}
       <div className="installments-section">
         <div className="installments-header">
           <span>Взносы ({formData.installments.length}/4)</span>
@@ -461,7 +437,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
         ))}
       </div>
 
-      {/* Ссылка + Заметка */}
       <div className="contract-form-field">
         <label>Ссылка на документы</label>
         <input
@@ -502,31 +477,16 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
         <>
           <div className="contract-form-field">
             <label>Автомобиль</label>
-            <input
-              type="text"
-              value={formData.objectData.car}
-              onChange={handleObjectDataChange('car')}
-              placeholder="Toyota Camry 2024"
-            />
+            <input type="text" value={formData.objectData.car} onChange={handleObjectDataChange('car')} placeholder="Toyota Camry 2024" />
           </div>
           <div className="contract-form-row">
             <div className="contract-form-field">
               <label>Гос. номер</label>
-              <input
-                type="text"
-                value={formData.objectData.plate}
-                onChange={handleObjectDataChange('plate')}
-                placeholder="А123БВ777"
-              />
+              <input type="text" value={formData.objectData.plate} onChange={handleObjectDataChange('plate')} placeholder="А123БВ777" />
             </div>
             <div className="contract-form-field">
               <label>VIN</label>
-              <input
-                type="text"
-                value={formData.objectData.vin}
-                onChange={handleObjectDataChange('vin')}
-                placeholder="XW7BF4FK60S123456"
-              />
+              <input type="text" value={formData.objectData.vin} onChange={handleObjectDataChange('vin')} placeholder="XW7BF4FK60S123456" />
             </div>
           </div>
         </>
@@ -536,31 +496,15 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
         <>
           <div className="contract-form-field">
             <label>Тип недвижимости</label>
-            <input
-              type="text"
-              value={formData.objectData.realtyType}
-              onChange={handleObjectDataChange('realtyType')}
-              placeholder="Квартира, дом, офис..."
-            />
+            <input type="text" value={formData.objectData.realtyType} onChange={handleObjectDataChange('realtyType')} placeholder="Квартира, дом, офис..." />
           </div>
           <div className="contract-form-field">
             <label>Адрес</label>
-            <input
-              type="text"
-              value={formData.objectData.address}
-              onChange={handleObjectDataChange('address')}
-              placeholder="г. Москва, ул. Примерная, д. 1"
-            />
+            <input type="text" value={formData.objectData.address} onChange={handleObjectDataChange('address')} placeholder="г. Москва, ул. Примерная, д. 1" />
           </div>
           <div className="contract-form-field">
             <label>Площадь (м²)</label>
-            <input
-              type="number"
-              min="0"
-              value={formData.objectData.area}
-              onChange={handleObjectDataChange('area')}
-              placeholder="85"
-            />
+            <input type="number" min="0" value={formData.objectData.area} onChange={handleObjectDataChange('area')} placeholder="85" />
           </div>
         </>
       )}
@@ -569,33 +513,16 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
         <>
           <div className="contract-form-field">
             <label>Застрахованный</label>
-            <input
-              type="text"
-              value={formData.objectData.insured}
-              onChange={handleObjectDataChange('insured')}
-              placeholder="ФИО застрахованного"
-            />
+            <input type="text" value={formData.objectData.insured} onChange={handleObjectDataChange('insured')} placeholder="ФИО застрахованного" />
           </div>
           <div className="contract-form-row">
             <div className="contract-form-field">
               <label>Возраст</label>
-              <input
-                type="number"
-                min="0"
-                value={formData.objectData.age}
-                onChange={handleObjectDataChange('age')}
-                placeholder="35"
-              />
+              <input type="number" min="0" value={formData.objectData.age} onChange={handleObjectDataChange('age')} placeholder="35" />
             </div>
             <div className="contract-form-field">
               <label>Страховая сумма</label>
-              <input
-                type="number"
-                min="0"
-                value={formData.objectData.sumInsured}
-                onChange={handleObjectDataChange('sumInsured')}
-                placeholder="1000000"
-              />
+              <input type="number" min="0" value={formData.objectData.sumInsured} onChange={handleObjectDataChange('sumInsured')} placeholder="1000000" />
             </div>
           </div>
         </>
@@ -679,68 +606,23 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
             <h3>Объект: {objectLabel}</h3>
             {formData.objectType === 'auto' && (
               <>
-                {formData.objectData.car && (
-                  <div className="contract-summary-row">
-                    <span className="label">Авто</span>
-                    <span className="value">{formData.objectData.car}</span>
-                  </div>
-                )}
-                {formData.objectData.plate && (
-                  <div className="contract-summary-row">
-                    <span className="label">Номер</span>
-                    <span className="value">{formData.objectData.plate}</span>
-                  </div>
-                )}
-                {formData.objectData.vin && (
-                  <div className="contract-summary-row">
-                    <span className="label">VIN</span>
-                    <span className="value">{formData.objectData.vin}</span>
-                  </div>
-                )}
+                {formData.objectData.car && (<div className="contract-summary-row"><span className="label">Авто</span><span className="value">{formData.objectData.car}</span></div>)}
+                {formData.objectData.plate && (<div className="contract-summary-row"><span className="label">Номер</span><span className="value">{formData.objectData.plate}</span></div>)}
+                {formData.objectData.vin && (<div className="contract-summary-row"><span className="label">VIN</span><span className="value">{formData.objectData.vin}</span></div>)}
               </>
             )}
             {formData.objectType === 'realty' && (
               <>
-                {formData.objectData.realtyType && (
-                  <div className="contract-summary-row">
-                    <span className="label">Тип</span>
-                    <span className="value">{formData.objectData.realtyType}</span>
-                  </div>
-                )}
-                {formData.objectData.address && (
-                  <div className="contract-summary-row">
-                    <span className="label">Адрес</span>
-                    <span className="value">{formData.objectData.address}</span>
-                  </div>
-                )}
-                {formData.objectData.area && (
-                  <div className="contract-summary-row">
-                    <span className="label">Площадь</span>
-                    <span className="value">{formData.objectData.area} м²</span>
-                  </div>
-                )}
+                {formData.objectData.realtyType && (<div className="contract-summary-row"><span className="label">Тип</span><span className="value">{formData.objectData.realtyType}</span></div>)}
+                {formData.objectData.address && (<div className="contract-summary-row"><span className="label">Адрес</span><span className="value">{formData.objectData.address}</span></div>)}
+                {formData.objectData.area && (<div className="contract-summary-row"><span className="label">Площадь</span><span className="value">{formData.objectData.area} м²</span></div>)}
               </>
             )}
             {formData.objectType === 'life' && (
               <>
-                {formData.objectData.insured && (
-                  <div className="contract-summary-row">
-                    <span className="label">Застрахованный</span>
-                    <span className="value">{formData.objectData.insured}</span>
-                  </div>
-                )}
-                {formData.objectData.age && (
-                  <div className="contract-summary-row">
-                    <span className="label">Возраст</span>
-                    <span className="value">{formData.objectData.age}</span>
-                  </div>
-                )}
-                {formData.objectData.sumInsured && (
-                  <div className="contract-summary-row">
-                    <span className="label">Страховая сумма</span>
-                    <span className="value">{Number(formData.objectData.sumInsured).toLocaleString('ru-RU')} ₽</span>
-                  </div>
-                )}
+                {formData.objectData.insured && (<div className="contract-summary-row"><span className="label">Застрахованный</span><span className="value">{formData.objectData.insured}</span></div>)}
+                {formData.objectData.age && (<div className="contract-summary-row"><span className="label">Возраст</span><span className="value">{formData.objectData.age}</span></div>)}
+                {formData.objectData.sumInsured && (<div className="contract-summary-row"><span className="label">Страховая сумма</span><span className="value">{Number(formData.objectData.sumInsured).toLocaleString('ru-RU')} ₽</span></div>)}
               </>
             )}
           </div>
@@ -770,8 +652,8 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
   };
 
   return (
-    <div className="contract-form-overlay" onClick={onClose}>
-      <div className="contract-form-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="contract-form-overlay">
+      <div className="contract-form-modal">
         <div className="contract-form-header">
           <h2>{isEditing ? 'Редактировать договор' : 'Новый договор'}</h2>
           <button className="contract-form-close" onClick={onClose}>
@@ -781,7 +663,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
           </button>
         </div>
 
-        {/* Шаги */}
         <div className="contract-form-steps">
           {STEP_LABELS.map((label, idx) => (
             <div
@@ -801,7 +682,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
 
-        {/* Кнопки */}
         <div className="contract-form-actions">
           {step === 1 && (
             <button type="button" className="contract-form-cancel" onClick={onClose}>
@@ -831,7 +711,6 @@ function ContractForm({ contract, clientId, onSubmit, onClose }) {
         </div>
       </div>
 
-      {/* Модалка нового клиента */}
       {showNewClient && (
         <ClientForm
           onSubmit={handleNewClientSubmit}
