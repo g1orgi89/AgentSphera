@@ -6,6 +6,7 @@ const {
   extractTextFromFile,
   parseWithClaude,
   reconcileItems,
+  updateAccrualCommissions,
   detectSource
 } = require('../services/actService');
 
@@ -92,6 +93,10 @@ router.post('/', async (req, res) => {
       items: finalItems
     });
 
+    // Обновить accrualCommission на найденных договорах (накопительно, += actualAmount)
+    const updatedCount = await updateAccrualCommissions(finalItems, req.user._id);
+    console.log(`Act saved: ${finalItems.length} items, ${updatedCount} contracts updated with accrualCommission`);
+
     res.status(201).json({ success: true, data: act });
   } catch (error) {
     console.error('Create act error:', error);
@@ -138,7 +143,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       });
     }
 
-    // 3. Сверить с базой
+    // 3. Сверить с базой (нечёткий поиск)
     const reconciledItems = await reconcileItems(parsedItems, req.user._id);
 
     // 4. Вернуть для предпросмотра (не сохраняя)
@@ -157,7 +162,6 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   } catch (error) {
     console.error('Upload act error:', error);
 
-    // Ошибка multer (размер, формат)
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ success: false, error: 'Файл слишком большой (макс. 5MB)' });
     }
