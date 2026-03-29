@@ -7,6 +7,7 @@ import App from './App';
 import './styles/index.css';
 import './styles/date-filter.css';
 import './styles/duplicates.css';
+import './styles/accrual.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
