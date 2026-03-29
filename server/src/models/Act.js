@@ -22,8 +22,18 @@ const actItemSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['ok', 'diff', 'unknown'],
+      enum: ['ok', 'diff', 'found', 'unknown'],
       default: 'unknown'
+    },
+    confidence: {
+      type: String,
+      enum: ['exact', 'partial', 'name_partial', 'name_only', 'none', ''],
+      default: ''
+    },
+    contractId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Contract',
+      default: null
     }
   },
   { _id: true }
@@ -75,7 +85,6 @@ const actSchema = new mongoose.Schema(
   }
 );
 
-// Индексы
 actSchema.index({ userId: 1, date: -1 });
 
 module.exports = mongoose.model('Act', actSchema);
