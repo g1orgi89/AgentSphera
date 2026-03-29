@@ -46,11 +46,9 @@ function ImportModal({ onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Предпросмотр
   const [preview, setPreview] = useState(null);
   const [selectedSheet, setSelectedSheet] = useState('');
 
-  // Результат
   const [result, setResult] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -128,8 +126,8 @@ function ImportModal({ onClose, onSuccess }) {
     : [];
 
   return (
-    <div className="import-overlay" onClick={onClose}>
-      <div className="import-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="import-overlay">
+      <div className="import-modal">
         <div className="import-header">
           <h2>Импорт договоров из Excel</h2>
           <button className="import-close" onClick={onClose}>
@@ -141,7 +139,6 @@ function ImportModal({ onClose, onSuccess }) {
 
         {error && <div className="import-error">{error}</div>}
 
-        {/* Результат импорта */}
         {result ? (
           <>
             <div className="import-result import-result-success">
@@ -171,7 +168,6 @@ function ImportModal({ onClose, onSuccess }) {
           </>
         ) : (
           <>
-            {/* Зона загрузки */}
             <div
               className="import-dropzone"
               onClick={() => fileRef.current?.click()}
@@ -198,10 +194,8 @@ function ImportModal({ onClose, onSuccess }) {
 
             {loading && <div className="import-loading">Обработка файла...</div>}
 
-            {/* Предпросмотр */}
             {preview && !loading && (
               <>
-                {/* Выбор листа */}
                 {preview.sheets.length > 1 && (
                   <div className="import-sheet-row">
                     <label>Лист:</label>
@@ -213,7 +207,6 @@ function ImportModal({ onClose, onSuccess }) {
                   </div>
                 )}
 
-                {/* Маппинг */}
                 {Object.keys(preview.mapping).length > 0 && (
                   <div className="import-mapping">
                     <div className="import-mapping-title">Распознанные поля ({Object.keys(preview.mapping).length})</div>
@@ -231,7 +224,6 @@ function ImportModal({ onClose, onSuccess }) {
                   Найдено строк: <b>{preview.totalRows}</b> (предпросмотр первых 10)
                 </div>
 
-                {/* Таблица предпросмотра */}
                 {visibleColumns.length > 0 && (
                   <div className="import-preview-table">
                     <table>
@@ -270,7 +262,6 @@ function ImportModal({ onClose, onSuccess }) {
               </>
             )}
 
-            {/* Нет данных для предпросмотра */}
             {!preview && !loading && !file && (
               <div className="import-actions">
                 <button className="import-btn-cancel" onClick={onClose}>Отмена</button>
