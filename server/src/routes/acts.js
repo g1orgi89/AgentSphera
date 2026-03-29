@@ -11,6 +11,7 @@ const {
   updateAccrualCommissions,
   detectSource
 } = require('../services/actService');
+const { normalizeName, normalizeNameForCompare } = require('../services/importService');
 
 const router = express.Router();
 router.use(protect);
@@ -20,7 +21,7 @@ const fileFilter = (req, file, cb) => {
   const allowedMimes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/pdf', 'text/csv', 'application/csv'];
   const ext = (file.originalname || '').toLowerCase().split('.').pop();
   if (allowedMimes.includes(file.mimetype) || ['xlsx', 'xls', 'pdf', 'csv'].includes(ext)) cb(null, true);
-  else cb(new Error('\u0414\u043e\u043f\u0443\u0441\u0442\u0438\u043c\u044b\u0435 \u0444\u043e\u0440\u043c\u0430\u0442\u044b: Excel (.xlsx, .xls), PDF, CSV'), false);
+  else cb(new Error('Допустимые форматы: Excel (.xlsx, .xls), PDF, CSV'), false);
 };
 const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -30,15 +31,15 @@ router.get('/', async (req, res) => {
     res.json({ success: true, data: acts });
   } catch (error) {
     console.error('Get acts error:', error);
-    res.status(500).json({ success: false, error: '\u041e\u0448\u0438\u0431\u043a\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043a\u0438 \u0430\u043a\u0442\u043e\u0432' });
+    res.status(500).json({ success: false, error: 'Ошибка загрузки актов' });
   }
 });
 
 router.post('/', async (req, res) => {
   try {
     const { company, period, source, originalFileName, items } = req.body;
-    if (!company || !company.trim()) return res.status(400).json({ success: false, error: '\u0423\u043a\u0430\u0436\u0438\u0442\u0435 \u0441\u0442\u0440\u0430\u0445\u043e\u0432\u0443\u044e \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u044e' });
-    if (!items || !Array.isArray(items) || items.length === 0) return res.status(400).json({ success: false, error: '\u0414\u043e\u0431\u0430\u0432\u044c\u0442\u0435 \u0445\u043e\u0442\u044f \u0431\u044b \u043e\u0434\u043d\u0443 \u0441\u0442\u0440\u043e\u043a\u0443' });
+    if (!company || !company.trim()) return res.status(400).json({ success: false, error: 'Укажите страховую компанию' });
+    if (!items || !Array.isArray(items) || items.length === 0) return res.status(400).json({ success: false, error: 'Добавьте хотя бы одну строку' });
 
     let finalItems = items;
     if (source === 'manual' || !items[0].status) {
@@ -52,86 +53,106 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Create act error:', error);
     if (error.name === 'ValidationError') { const messages = Object.values(error.errors).map(e => e.message); return res.status(400).json({ success: false, error: messages.join(', ') }); }
-    res.status(500).json({ success: false, error: '\u041e\u0448\u0438\u0431\u043a\u0430 \u0441\u043e\u0437\u0434\u0430\u043d\u0438\u044f \u0430\u043a\u0442\u0430' });
+    res.status(500).json({ success: false, error: 'Ошибка создания акта' });
   }
 });
 
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ success: false, error: '\u0424\u0430\u0439\u043b \u043d\u0435 \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043d' });
+    if (!req.file) return res.status(400).json({ success: false, error: 'Файл не загружен' });
     const { company, period } = req.body;
-    if (!company || !company.trim()) return res.status(400).json({ success: false, error: '\u0423\u043a\u0430\u0436\u0438\u0442\u0435 \u0441\u0442\u0440\u0430\u0445\u043e\u0432\u0443\u044e \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u044e' });
+    if (!company || !company.trim()) return res.status(400).json({ success: false, error: 'Укажите страховую компанию' });
 
     const text = await extractTextFromFile(req.file.buffer, req.file.mimetype, req.file.originalname);
-    if (!text || text.trim().length === 0) return res.status(400).json({ success: false, error: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0438\u0437\u0432\u043b\u0435\u0447\u044c \u0442\u0435\u043a\u0441\u0442 \u0438\u0437 \u0444\u0430\u0439\u043b\u0430' });
+    if (!text || text.trim().length === 0) return res.status(400).json({ success: false, error: 'Не удалось извлечь текст из файла' });
 
     const parsedItems = await parseWithClaude(text);
-    if (parsedItems.length === 0) return res.status(400).json({ success: false, error: '\u0412 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0435 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b \u0434\u0430\u043d\u043d\u044b\u0435 \u043e \u0434\u043e\u0433\u043e\u0432\u043e\u0440\u0430\u0445' });
+    if (parsedItems.length === 0) return res.status(400).json({ success: false, error: 'В документе не найдены данные о договорах' });
 
     const reconciledItems = await reconcileItems(parsedItems, req.user._id);
     const source = detectSource(req.file.mimetype, req.file.originalname);
     res.json({ success: true, data: { items: reconciledItems, source, originalFileName: req.file.originalname, company: company.trim(), period: (period || '').trim() } });
   } catch (error) {
     console.error('Upload act error:', error);
-    if (error.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ success: false, error: '\u0424\u0430\u0439\u043b \u0441\u043b\u0438\u0448\u043a\u043e\u043c \u0431\u043e\u043b\u044c\u0448\u043e\u0439 (\u043c\u0430\u043a\u0441. 5MB)' });
-    if (error.message && error.message.includes('\u0414\u043e\u043f\u0443\u0441\u0442\u0438\u043c\u044b\u0435 \u0444\u043e\u0440\u043c\u0430\u0442\u044b')) return res.status(400).json({ success: false, error: error.message });
-    res.status(500).json({ success: false, error: error.message || '\u041e\u0448\u0438\u0431\u043a\u0430 \u043e\u0431\u0440\u0430\u0431\u043e\u0442\u043a\u0438 \u0444\u0430\u0439\u043b\u0430' });
+    if (error.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ success: false, error: 'Файл слишком большой (макс. 5MB)' });
+    if (error.message && error.message.includes('Допустимые форматы')) return res.status(400).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: error.message || 'Ошибка обработки файла' });
   }
 });
 
-// --- POST /acts/:id/add-contract --- \u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0434\u043e\u0433\u043e\u0432\u043e\u0440 \u0438\u0437 \u0430\u043a\u0442\u0430 (\u0434\u043b\u044f \"\u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043d\u044b\u0445\") ---
+// --- POST /acts/:id/add-contract --- Добавить договор из акта (для "не найденных") ---
 
 router.post('/:id/add-contract', async (req, res) => {
   try {
     const { itemIndex } = req.body;
     const act = await Act.findOne({ _id: req.params.id, userId: req.user._id });
-    if (!act) return res.status(404).json({ success: false, error: '\u0410\u043a\u0442 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d' });
+    if (!act) return res.status(404).json({ success: false, error: 'Акт не найден' });
 
     const idx = parseInt(itemIndex, 10);
     if (isNaN(idx) || idx < 0 || idx >= act.items.length) {
-      return res.status(400).json({ success: false, error: '\u041d\u0435\u0432\u0435\u0440\u043d\u044b\u0439 \u0438\u043d\u0434\u0435\u043a\u0441 \u0441\u0442\u0440\u043e\u043a\u0438' });
+      return res.status(400).json({ success: false, error: 'Неверный индекс строки' });
     }
 
     const item = act.items[idx];
-    const clientName = (item.clientName || '').trim();
+    const rawName = (item.clientName || '').trim();
     const contractNumber = (item.contractNumber || '').trim();
 
-    if (!clientName && !contractNumber) {
-      return res.status(400).json({ success: false, error: '\u041d\u0435\u0442 \u0434\u0430\u043d\u043d\u044b\u0445 \u0434\u043b\u044f \u0441\u043e\u0437\u0434\u0430\u043d\u0438\u044f \u0434\u043e\u0433\u043e\u0432\u043e\u0440\u0430' });
+    if (!rawName && !contractNumber) {
+      return res.status(400).json({ success: false, error: 'Нет данных для создания договора' });
     }
 
-    // 1. \u041d\u0430\u0439\u0442\u0438 \u0438\u043b\u0438 \u0441\u043e\u0437\u0434\u0430\u0442\u044c \u043a\u043b\u0438\u0435\u043d\u0442\u0430
+    // 1. Найти существующего клиента (та же логика нормализации что при импорте)
     let clientId = null;
-    if (clientName) {
-      let client = await Client.findOne({
-        userId: req.user._id,
-        name: { $regex: new RegExp('^' + clientName.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&') + '$', 'i') }
-      });
-      if (!client) {
-        client = await Client.create({ userId: req.user._id, name: clientName, phone: '', email: '', status: 'active' });
+    if (rawName) {
+      const cleanName = normalizeName(rawName);
+      const normalizedSearch = normalizeNameForCompare(rawName);
+
+      // Загружаем всех клиентов и ищем по нормализованному имени
+      const allClients = await Client.find({ userId: req.user._id });
+      let foundClient = null;
+
+      for (const c of allClients) {
+        const cNorm = normalizeNameForCompare(c.name);
+        if (cNorm === normalizedSearch) {
+          foundClient = c;
+          break;
+        }
       }
-      clientId = client._id;
+
+      if (foundClient) {
+        clientId = foundClient._id;
+      } else {
+        // Не нашли — создаём нового клиента с очищенным именем
+        const newClient = await Client.create({
+          userId: req.user._id,
+          name: cleanName,
+          phone: '',
+          email: '',
+          status: 'active'
+        });
+        clientId = newClient._id;
+      }
     }
 
     if (!clientId) {
-      return res.status(400).json({ success: false, error: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0438\u0442\u044c \u043a\u043b\u0438\u0435\u043d\u0442\u0430' });
+      return res.status(400).json({ success: false, error: 'Не удалось определить клиента' });
     }
 
-    // 2. \u0421\u043e\u0437\u0434\u0430\u0442\u044c \u0434\u043e\u0433\u043e\u0432\u043e\u0440
+    // 2. Создать договор
     const contract = await Contract.create({
       userId: req.user._id,
       clientId,
       company: act.company || '',
       number: contractNumber,
-      type: '\u041d\u0435 \u0443\u043a\u0430\u0437\u0430\u043d',
+      type: 'Не указан',
       premium: 0,
       commissionType: 'fix',
       commissionValue: Math.abs(item.actualAmount) || 0,
       accrualCommission: item.actualAmount || 0,
-      note: `\u0414\u043e\u0431\u0430\u0432\u043b\u0435\u043d \u0438\u0437 \u0430\u043a\u0442\u0430 ${act.company} ${act.period || ''}`.trim()
+      note: `Добавлен из акта ${act.company} ${act.period || ''}`.trim()
     });
 
-    // 3. \u041e\u0431\u043d\u043e\u0432\u0438\u0442\u044c \u0441\u0442\u0440\u043e\u043a\u0443 \u0430\u043a\u0442\u0430
+    // 3. Обновить строку акта
     act.items[idx].status = 'found';
     act.items[idx].confidence = 'exact';
     act.items[idx].contractId = contract._id;
@@ -141,14 +162,14 @@ router.post('/:id/add-contract', async (req, res) => {
     res.json({ success: true, data: act });
   } catch (error) {
     console.error('Add contract from act error:', error);
-    res.status(500).json({ success: false, error: error.message || '\u041e\u0448\u0438\u0431\u043a\u0430 \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u0438\u044f \u0434\u043e\u0433\u043e\u0432\u043e\u0440\u0430' });
+    res.status(500).json({ success: false, error: error.message || 'Ошибка добавления договора' });
   }
 });
 
 router.delete('/:id', async (req, res) => {
   try {
     const act = await Act.findOne({ _id: req.params.id, userId: req.user._id });
-    if (!act) return res.status(404).json({ success: false, error: '\u0410\u043a\u0442 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d' });
+    if (!act) return res.status(404).json({ success: false, error: 'Акт не найден' });
 
     if (act.items && act.items.length > 0) {
       for (const item of act.items) {
@@ -162,7 +183,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ success: true, data: {} });
   } catch (error) {
     console.error('Delete act error:', error);
-    res.status(500).json({ success: false, error: '\u041e\u0448\u0438\u0431\u043a\u0430 \u0443\u0434\u0430\u043b\u0435\u043d\u0438\u044f \u0430\u043a\u0442\u0430' });
+    res.status(500).json({ success: false, error: 'Ошибка удаления акта' });
   }
 });
 
